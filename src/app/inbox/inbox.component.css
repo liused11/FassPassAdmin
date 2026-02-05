@@ -1,0 +1,102 @@
+.inbox-layout {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+/* PrimeNG PanelMenu Overrides */
+.sidebar-menu {
+  border: none !important;
+  background: transparent !important;
+}
+
+.sidebar-menu .p-panelmenu-header {
+  font-size: 0.95rem;
+  background: transparent;
+  border: none;
+}
+
+.sidebar-menu .p-menuitem-text {
+  color: #555;
+}
+
+.sidebar-menu .p-menuitem-icon {
+  margin-right: 0.5rem;
+  color: #777;
+}
+
+/* Sidebar Container */
+.sidebar {
+  width: 250px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Sidebar Header + Title */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sidebar-title {
+  font-size: 0.9rem;
+  color: #888;
+  margin: 1rem 0 0.5rem;
+}
+
+/* Sidebar List (if not using PanelMenu) */
+.sidebar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-list li {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.sidebar-list li i {
+  margin-right: 0.5rem;
+}
+
+/* Footer & Free Box */
+.sidebar-footer {
+  margin-top: 2rem;
+}
+
+.free-box {
+  background: #f9f9f9;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.free-box small {
+  color: #777;
+}
+
+/* Inbox Content */
+.inbox-content {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.inbox-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}

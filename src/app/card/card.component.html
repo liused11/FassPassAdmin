@@ -1,0 +1,106 @@
+<div class="flex flex-column gap-6 p-6 bg-gray-50 min-h-screen w-full">
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div *ngFor="let metric of metrics" class="col-12 md:col-6 lg:col-3">
+      <p-card styleClass="border-none shadow-2 border-round-xl h-full" [style]="{'height': '100%'}">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="block text-gray-500 text-sm font-medium mb-1">{{ metric.title }}</span>
+            <div class="flex items-baseline gap-2">
+              <span class="text-3xl font-bold text-blue-600">{{ metric.value }}</span>
+            </div>
+            <span class="text-xs text-blue-400 mt-1 font-semibold">{{ metric.subtext }}</span>
+          </div>
+          <div class="w-3rem h-3rem border-round bg-gray-50 flex items-center justify-center border-1 border-gray-100">
+            <i [class]="metric.icon" class="text-xl text-gray-600"></i>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center justify-between gap-4 bg-white p-3 border-round-xl shadow-1 border-1 border-gray-100">
+    <div class="flex flex-wrap items-center gap-3">
+      <i class="pi pi-arrow-right-arrow-left text-gray-400 rotate-90 md:rotate-0"></i>
+      
+      <p-calendar [(ngModel)]="selectedDate" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" 
+                  [showIcon]="true" styleClass="p-inputtext-sm w-12rem"></p-calendar>
+      
+      <p-dropdown [options]="[]" placeholder="สถานะการจอง" styleClass="p-inputtext-sm w-10rem"></p-dropdown>
+      <p-dropdown [options]="[]" placeholder="อาคาร" styleClass="p-inputtext-sm w-8rem"></p-dropdown>
+      <p-dropdown [options]="[]" placeholder="เรียงตาม" styleClass="p-inputtext-sm w-8rem"></p-dropdown>
+      
+      <p-button label="ตัวกรอง" icon="pi pi-filter" size="small"></p-button>
+    </div>
+  </div>
+
+  <div class="bg-white border-round-xl border-1 border-gray-100 shadow-3 overflow-hidden flex flex-column">
+    
+    <div class="flex flex-wrap items-center justify-between p-4 gap-4 border-bottom-1 border-gray-100">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-600 font-bold text-lg border-bottom-2 border-blue-600 pb-1">รายการการจอง</span>
+        <p-button label="เพิ่มการจองใหม่" icon="pi pi-user-plus" [outlined]="true" size="small" styleClass="text-blue-400 border-blue-400"></p-button>
+      </div>
+
+      <p-iconField iconPosition="right">
+        <p-inputIcon styleClass="pi pi-search"></p-inputIcon>
+        <input type="text" pInputText placeholder="ค้นหาผู้ใช้งาน" class="p-inputtext-sm w-15rem" />
+      </p-iconField>
+    </div>
+
+    <p-table 
+      [value]="reservations" 
+      [(selection)]="selectedReservations" 
+      [paginator]="true" 
+      [rows]="10"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-sm">
+      
+      <ng-template pTemplate="header">
+        <tr class="bg-gray-50 text-gray-600 text-sm">
+          <th style="width: 4rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
+          <th pSortableColumn="user">ผู้ใช้งาน <p-sortIcon field="user"></p-sortIcon></th>
+          <th>วันที่</th>
+          <th>เวลา</th>
+          <th>อาคาร-ห้อง</th>
+          <th>ประเภท</th>
+          <th>ผู้เชิญ</th>
+          <th>สถานะ</th>
+          <th>จัดการ</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-res>
+        <tr class="text-sm hover:bg-gray-50 transition-colors border-bottom-1 border-gray-50">
+          <td><p-tableCheckbox [value]="res"></p-tableCheckbox></td>
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="w-2rem h-2rem border-circle bg-gray-100 flex items-center justify-center border-1 border-gray-200">
+                <i class="pi pi-user text-gray-400"></i>
+              </div>
+              <div class="flex flex-column">
+                <span class="font-semibold text-gray-800">{{ res.user }}</span>
+                <span class="text-xs text-gray-500">User: {{ res.id }}</span>
+              </div>
+            </div>
+          </td>
+          <td>{{ res.date }}</td>
+          <td>{{ res.time }}</td>
+          <td>{{ res.room }}</td>
+          <td>{{ res.type }}</td>
+          <td>{{ res.invitee }}</td>
+          <td>
+            <p-tag [value]="res.status" [severity]="getSeverity(res.status)" [rounded]="true" styleClass="font-medium px-2 py-1"></p-tag>
+          </td>
+          <td>
+            <div class="flex gap-2">
+              <p-button label="เพิ่มเติม" [link]="true" styleClass="p-0 text-blue-500 text-xs"></p-button>
+              <p-button label="ลบ" [link]="true" styleClass="p-0 text-blue-400 text-xs"></p-button>
+              <p-button label="ดูประวัติ" [link]="true" styleClass="p-0 text-blue-300 text-xs"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

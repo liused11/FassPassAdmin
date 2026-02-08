@@ -1,0 +1,28 @@
+  <!-- Main Content -->
+  <div class="inbox-content p-card">
+    <div class="inbox-header">
+      <h3>Inbox</h3>
+      <button pButton label="New Mail" icon="pi pi-envelope" class="p-button-sm p-button-info"></button>
+    </div>
+
+    <p-table [value]="messages" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Subject</th>
+          <th>Sender</th>
+          <th>Date</th>
+          <th>Status</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-message>
+        <tr>
+          <td>{{ message.subject }}</td>
+          <td>{{ message.sender }}</td>
+          <td>{{ message.date }}</td>
+          <td>
+            <p-tag [severity]="getSeverity(message.status)" [value]="message.status"></p-tag>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>

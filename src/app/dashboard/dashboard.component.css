@@ -1,0 +1,121 @@
+/* /* Layout
+.sidebar {
+  width: 5rem;
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo {
+  height: 2.5rem;
+  width: 2.5rem;
+  background: #3b82f6;
+  border-radius: 0.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-content {
+  flex: 1;
+  padding: 1rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+.search-box {
+  width: 16rem;
+  
+}
+
+.flex-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* push content to right */
+  /* gap: 1rem; /* optional spacing */
+/* }
+
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 1rem;
+} */
+
+/* Splitters */
+/* .main-splitter {
+  height: calc(100vh - 120px);
+}
+
+.bottom-splitter {
+  height: 100%;
+} */
+
+/* Panels */
+/* .panel-full {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+} */
+
+/* Chart */
+/* .chart-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+} */
+
+/* .chart-container {
+  flex: 1;
+  min-height: 300px;
+} */
+
+/* Stats */
+/* .stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+} */
+/* 
+.stat-card {
+  padding: 0.5rem 1rem;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-name {
+  font-weight: bold;
+}
+
+.stat-value {
+  color: #3b82f6;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.p-chart{
+  height: 100%;
+}
+  /* Chart */
+  :host ::ng-deep .p-chart {
+  width: 100% !important;
+  height: 400px !important; /* ✅ ความสูง fix */
+}

@@ -1,0 +1,54 @@
+<div class="video-page p-4">
+  <!-- Top Nav -->
+  <div class="top-nav flex justify-between items-center mb-4">
+    <div class="menu flex space-x-6">
+      <button pButton label="Home" class="p-button-text"></button>
+      <button pButton label="Movies" class="p-button-text"></button>
+      <button pButton label="TV Shows" class="p-button-text"></button>
+      <button pButton label="Recently Added" class="p-button-text"></button>
+      <button pButton label="My List" class="p-button-text"></button>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <span class="p-input-icon-left">
+        <i class="pi pi-search"></i>
+        <input pInputText placeholder="Search" />
+      </span>
+      <p-avatar icon="pi pi-user" shape="circle"></p-avatar>
+    </div>
+  </div>
+
+  <!-- Keep Watching -->
+  <h3 class="section-title">Keep watching</h3>
+  <p-carousel [value]="keepWatching" [numVisible]="4" [numScroll]="2" circular>
+    <ng-template pTemplate="item" let-video>
+      <p-card 
+        [header]="video.title" 
+        [subheader]="video.genres" 
+        styleClass="video-card" 
+        (click)="goToVideo(video)">
+        <img [src]="video.image" alt="{{ video.title }}" class="video-img" />
+        <div class="video-rating">⭐ {{ video.rating }}</div>
+      </p-card>
+    </ng-template>
+  </p-carousel>
+
+  <!-- Categories -->
+  <div class="mt-6 flex justify-between items-center">
+    <p-tabMenu [model]="categories" [(activeItem)]="activeCategory"></p-tabMenu>
+    <button pButton label="Show All" class="p-button-text"></button>
+  </div>
+
+  <div class="video-grid mt-4">
+    <div *ngFor="let video of popular" class="video-item">
+      <p-card 
+        [header]="video.title" 
+        [subheader]="video.genres" 
+        styleClass="video-card" 
+        (click)="goToVideo(video)">
+        <img [src]="video.image" alt="{{ video.title }}" class="video-img" />
+        <div class="video-rating">⭐ {{ video.rating }}</div>
+      </p-card>
+    </div>
+  </div>
+</div>

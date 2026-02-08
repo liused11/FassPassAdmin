@@ -1,0 +1,8 @@
+:host ::ng-deep .p-popover {
+  padding: 0 !important;
+  border-radius: 8px;
+}
+
+button {
+  font-size: 15px;
+}

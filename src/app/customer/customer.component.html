@@ -1,0 +1,199 @@
+<div class="flex flex-column md:flex-row gap-4 w-full p-3 md:p-4 surface-ground min-h-screen align-items-start">
+  
+  <div class="w-full md:w-16rem surface-card shadow-2 border-round-xl p-2 md:p-3 flex-shrink-0 md:sticky md:top-0">
+    <div class="text-900 font-bold text-lg md:text-xl mb-2 md:mb-3 px-2 hidden md:block">User Groups</div>
+    
+    <div class="flex flex-row md:flex-column gap-2 overflow-x-auto pb-2 md:pb-0">
+        <div class="p-ripple p-3 flex align-items-center justify-content-between cursor-pointer border-round transition-colors transition-duration-150 hover:surface-100 flex-shrink-0 min-w-max"
+             [class.surface-100]="selectedCategory === 'All'"
+             [class.text-primary]="selectedCategory === 'All'"
+             (click)="setCategory('All')">
+             <div class="flex align-items-center gap-2">
+                <i class="pi pi-users text-lg"></i>
+                <span>All Users</span>
+             </div>
+             <p-badge [value]="getCount('All').toString()" severity="secondary" styleClass="ml-3"></p-badge>
+        </div>
+
+        <div class="p-ripple p-3 flex align-items-center justify-content-between cursor-pointer border-round transition-colors transition-duration-150 hover:surface-100 flex-shrink-0 min-w-max"
+             [class.surface-100]="selectedCategory === 'Internal'"
+             [class.text-primary]="selectedCategory === 'Internal'"
+             (click)="setCategory('Internal')">
+             <div class="flex align-items-center gap-2">
+                <i class="pi pi-id-card text-lg"></i>
+                <span>Internal</span>
+             </div>
+             <p-badge [value]="getCount('Internal').toString()" severity="info" styleClass="ml-3"></p-badge>
+        </div>
+
+        <div class="p-ripple p-3 flex align-items-center justify-content-between cursor-pointer border-round transition-colors transition-duration-150 hover:surface-100 flex-shrink-0 min-w-max"
+             [class.surface-100]="selectedCategory === 'Hybrid'"
+             [class.text-purple-600]="selectedCategory === 'Hybrid'"
+             (click)="setCategory('Hybrid')">
+             <div class="flex align-items-center gap-2">
+                <i class="pi pi-cog text-lg"></i>
+                <span>Hybrid</span>
+             </div>
+             <p-badge [value]="getCount('Hybrid').toString()" styleClass="ml-3 bg-purple-500 text-white"></p-badge>
+        </div>
+
+        <div class="p-ripple p-3 flex align-items-center justify-content-between cursor-pointer border-round transition-colors transition-duration-150 hover:surface-100 flex-shrink-0 min-w-max"
+             [class.surface-100]="selectedCategory === 'External'"
+             [class.text-primary]="selectedCategory === 'External'"
+             (click)="setCategory('External')">
+             <div class="flex align-items-center gap-2">
+                <i class="pi pi-briefcase text-lg"></i>
+                <span>External</span>
+             </div>
+             <p-badge [value]="getCount('External').toString()" severity="warn" styleClass="ml-3"></p-badge>
+        </div>
+    </div>
+  </div>
+
+
+  <div class="flex-1 flex flex-column gap-4 w-full overflow-hidden">
+    
+    <div class="grid grid-nogutter">
+        <div *ngFor="let metric of metrics" class="col-12 sm:col-6 lg:col-3 p-2">
+        <p-card styleClass="shadow-2 border-none h-full border-round-xl">
+            <div class="flex align-items-center justify-content-between">
+            <div>
+                <span class="block text-500 text-sm font-medium mb-1">{{ metric.title }}</span>
+                <div class="text-3xl font-bold text-blue-600">{{ metric.value }}</div>
+                <div class="text-xs text-blue-400 mt-1 font-medium">{{ metric.subtext }}</div>
+            </div>
+            <div class="w-3rem h-3rem border-round bg-blue-50 flex align-items-center justify-content-center">
+                <i [class]="metric.icon" class="text-xl text-blue-700"></i>
+            </div>
+            </div>
+        </p-card>
+        </div>
+    </div>
+
+    <div class="w-full bg-white p-3 border-round-xl shadow-1 border-1 border-100 flex flex-column md:flex-row flex-wrap align-items-center justify-content-between gap-3">
+        <div class="flex flex-wrap align-items-center gap-2 w-full md:w-auto justify-content-center md:justify-content-start">
+            <p-calendar [(ngModel)]="selectedDate" placeholder="วันที่" [showIcon]="true" styleClass="w-full md:w-11rem p-inputtext-sm"></p-calendar>
+            <p-dropdown [options]="roleOptions" placeholder="บทบาท" styleClass="w-full md:w-12rem p-inputtext-sm surface-50 border-none"></p-dropdown>
+            <p-dropdown [options]="authOptions" placeholder="ยืนยันตัวตน" styleClass="w-full md:w-12rem p-inputtext-sm"></p-dropdown>
+            <p-dropdown [options]="statusOptions" placeholder="สถานะ" styleClass="w-full md:w-8rem p-inputtext-sm"></p-dropdown>
+            <p-button label="ค้นหา" icon="pi pi-search" size="small" styleClass="w-full md:w-auto"></p-button>
+        </div>
+    </div>
+
+    <div class="surface-card border-round-xl shadow-3 overflow-hidden">
+        
+        <div class="flex flex-column md:flex-row align-items-center justify-content-between p-3 md:p-4 border-bottom-1 border-100 bg-white gap-3">
+            <div class="flex align-items-center gap-3 w-full md:w-auto justify-content-between md:justify-content-start">
+                <span class="font-bold text-lg border-bottom-2 pb-1" [class.text-blue-600]="selectedCategory === 'Internal'">
+                    {{ selectedCategory }} List
+                </span>
+                <p-button label="เพิ่ม" icon="pi pi-user-plus" [outlined]="true" size="small"></p-button>
+            </div>
+            <span class="p-input-icon-left w-full md:w-auto">
+                <i class="pi pi-search"></i>
+                <input type="text" pInputText placeholder="ค้นหา..." class="p-inputtext-sm w-full md:w-20rem" />
+            </span>
+        </div>
+
+        <p-table [value]="filteredUsers" [(selection)]="selectedUsers" [paginator]="true" [rows]="10" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped">
+            <ng-template pTemplate="header">
+                <tr class="text-sm text-600 bg-gray-50 whitespace-nowrap">
+                    <th style="width: 3rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
+                    <th>ข้อมูลส่วนตัว </th>
+                    <th>บริษัท </th>
+                    <th>บทบาท </th>
+                    <th class="hidden md:table-cell">Auth</th>
+                    
+                    <th class=" md:table-cell">วันที่ลงทะเบียน </th>
+
+                    <th class=" md:table-cell">สิทธิ์ถึง </th> 
+                    
+                    <th>สถานะ</th>
+                    <th class="hidden md:table-cell">ใช้งานล่าสุด</th>
+                    <th>จัดการ</th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-user>
+                <tr class="text-sm align-middle whitespace-nowrap">
+                    <td><p-tableCheckbox [value]="user"></p-tableCheckbox></td>
+                    
+                    <td>
+                        <div class="flex align-items-center gap-2">
+                        <p-avatar icon="pi pi-user" shape="circle" 
+                                    [styleClass]="user.category === 'Internal' ? 'bg-indigo-50 text-indigo-500' : 
+                                                  user.category === 'Hybrid' ? 'bg-purple-50 text-purple-500' : 
+                                                  'bg-orange-50 text-orange-500'">
+                        </p-avatar>
+                        <div class="flex flex-column">
+                            <span class="font-semibold text-800">{{user.firstName}} {{user.lastName}}</span>
+                            <div class="flex align-items-center gap-2 text-xs text-500">
+                                <span><i class="pi pi-phone mr-1"></i>{{user.phone}}</span>
+                                <span *ngIf="user.email" class="hidden lg:inline">| {{user.email}}</span>
+                            </div>
+                        </div>
+                        </div>
+                    </td>
+
+                    <td class="font-medium text-700">{{ user.company }}</td>
+
+                    <td>
+                        <p-tag [value]="user.role" [severity]="getRoleSeverity(user.role)" [rounded]="true"></p-tag>
+                    </td>
+
+                    <td class="hidden md:table-cell">
+                        <i [class]="getAuthIcon(user.authMethod)" class="text-gray-500 text-lg" pTooltip="{{user.authMethod}}"></i>
+                    </td>
+
+                    <td class="md:table-cell">
+                        <div class="flex align-items-center gap-2 text-700">
+                            <i class="pi pi-calendar-plus text-blue-400"></i>
+                            <span>{{ user.registerDate | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                    </td>
+
+                    <td class=" md:table-cell">
+                        <div *ngIf="user.expiryDate; else permanentTemplate">
+                            
+                            <div *ngIf="isExpired(user.expiryDate); else activeDateTemplate" class="flex flex-column">
+                                <span class="text-red-500 font-bold text-xs line-through mb-1">
+                                    {{ user.expiryDate | date:'dd/MM/yyyy' }}
+                                </span>
+                                <p-tag value="EXPIRED" severity="danger" styleClass="text-[10px] py-0 px-1 w-min h-1rem"></p-tag>
+                            </div>
+                            
+                            <ng-template #activeDateTemplate>
+                                <div class="flex align-items-center gap-2 text-700">
+                                    <i class="pi pi-calendar text-400"></i>
+                                    <span>{{ user.expiryDate | date:'dd/MM/yyyy' }}</span>
+                                </div>
+                            </ng-template>
+                        </div>
+
+                        <ng-template #permanentTemplate>
+                            <span class="text-green-600 font-medium text-xs border-1 border-green-200 bg-green-50 px-2 py-1 border-round">
+                                ถาวร
+                            </span>
+                        </ng-template>
+                    </td>
+
+                    <td>
+                        <span [ngClass]="getStatusColor(user.status)">
+                            {{user.status}}
+                        </span>
+                    </td>
+
+                    <td class="text-500 text-xs hidden md:table-cell">{{user.lastActive}}</td>
+
+                    <td>
+                        <div class="flex gap-1">
+                        <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" severity="info" size="small"></p-button>
+                        <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger" size="small"></p-button>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+  </div>
+</div>

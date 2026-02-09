@@ -14,8 +14,8 @@ export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'chat', component: ChatComponent },
-  { 
-    path: 'buildings', 
+  {
+    path: 'buildings',
     component: InboxComponent,
     children: [
       { path: '', component: InboxListComponent },      // <-- default child route
@@ -23,9 +23,22 @@ export const routes: Routes = [
       { path: 'star', component: StarComponent }
     ]
   },
+  {
+    path: 'zones',
+    component: InboxComponent,
+    children: [
+      { path: '', component: InboxListComponent },
+      { path: 'list', component: InboxListComponent },
+      { path: 'star', component: StarComponent }
+    ]
+  },
   { path: 'customer', component: CustomerComponent },
   { path: 'reserve', component: CardComponent },
   { path: 'video', component: VideoComponent },
-  { path: 'fp', component: FloorPlanViewerComponent }
+  { path: 'fp', component: FloorPlanViewerComponent },
+  {
+    path: 'parking',
+    loadComponent: () => import('./parking/parking-management/parking-management.component').then(m => m.ParkingManagementComponent)
+  }
 ];
 

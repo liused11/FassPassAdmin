@@ -1,0 +1,118 @@
+<div class="card p-4">
+    <h2 class="text-3xl font-bold mb-4">Parking Management</h2>
+    <div class="grid">
+        <div *ngFor="let lot of parkingLots" class="col-12 md:col-6 lg:col-4 xl:col-3">
+            <p-card styleClass="parking-card h-full shadow-3 border-round-xl">
+                <ng-template pTemplate="header">
+                    <div class="relative">
+                        <img *ngIf="lot.images && lot.images.length > 0" [src]="lot.images[0]" [alt]="lot.name"
+                            class="w-full h-15rem object-cover" />
+                        <div class="absolute top-0 right-0 m-2">
+                            <p-tag [value]="lot.status | uppercase" [severity]="getSeverity(lot.status)"></p-tag>
+                        </div>
+                    </div>
+                </ng-template>
+
+                <div class="flex flex-column gap-3">
+                    <div class="flex justify-content-between align-items-center">
+                        <span class="text-xl font-bold text-900">{{ lot.name }}</span>
+                        <i *ngIf="lot.hasEVCharger" class="pi pi-bolt text-green-500 text-2xl"
+                            pTooltip="EV Charger Available"></i>
+                    </div>
+
+                    <div class="field mb-0">
+                        <div class="flex align-items-center gap-2 text-700 mb-1">
+                            <i class="pi pi-clock"></i>
+                            <span>{{ lot.hours }}</span>
+                        </div>
+                        <div class="flex align-items-center gap-2 text-700">
+                            <i class="pi pi-money-bill"></i>
+                            <span>{{ lot.priceUnit }}</span>
+                        </div>
+                    </div>
+
+                    <div class="occupancy-section mt-2">
+                        <div class="flex justify-content-between mb-1">
+                            <span class="text-sm font-medium text-700">Normal Capacity</span>
+                            <span class="text-sm font-bold text-blue-600">{{ lot.available.normal }} / {{
+                                lot.capacity.normal }}</span>
+                        </div>
+                        <p-progressBar [value]="getOccupancyPercentage(lot)" [showValue]="false"
+                            [style]="{'height': '12px'}"
+                            [color]="getOccupancyPercentage(lot) > 90 ? '#ef4444' : '#3b82f6'"></p-progressBar>
+                        <div class="text-right mt-1">
+                            <small class="text-500">{{ getOccupancyPercentage(lot) }}% Occupied</small>
+                        </div>
+                    </div>
+                </div>
+
+                <ng-template pTemplate="footer">
+                    <p-button label="Manage" icon="pi pi-cog" (onClick)="openManageDialog(lot)"
+                        styleClass="w-full p-button-outlined"></p-button>
+                </ng-template>
+            </p-card>
+        </div>
+    </div>
+</div>
+
+<p-dialog [(visible)]="displayDialog" [header]="'Manage: ' + (editingParkingLot?.name || '')" [modal]="true"
+    [style]="{width: '450px'}" [draggable]="false" [resizable]="false" styleClass="p-fluid">
+    <div class="flex flex-column gap-3" *ngIf="editingParkingLot">
+
+        <div class="field">
+            <label for="status" class="font-bold">Status</label>
+            <p-dropdown [options]="statusOptions" [(ngModel)]="editingParkingLot.status" placeholder="Select Status"
+                appendTo="body">
+                <ng-template pTemplate="selectedItem">
+                    <div *ngIf="editingParkingLot.status">
+                        <p-tag [value]="editingParkingLot.status | uppercase"
+                            [severity]="getSeverity(editingParkingLot.status)"></p-tag>
+                    </div>
+                </ng-template>
+                <ng-template let-option pTemplate="item">
+                    <p-tag [value]="option.label | uppercase" [severity]="getSeverity(option.value)"></p-tag>
+                </ng-template>
+            </p-dropdown>
+        </div>
+
+        <p-divider></p-divider>
+        <span class="font-bold text-lg">Update Availability</span>
+
+        <div class="formgrid grid">
+            <div class="field col-12">
+                <label for="normal-avail">Normal Cars</label>
+                <p-inputNumber id="normal-avail" [(ngModel)]="editingParkingLot.available.normal" [min]="0"
+                    [max]="editingParkingLot.capacity.normal" [showButtons]="true" buttonLayout="horizontal"
+                    inputStyleClass="text-center" decrementButtonClass="p-button-secondary"
+                    incrementButtonClass="p-button-secondary" incrementButtonIcon="pi pi-plus"
+                    decrementButtonIcon="pi pi-minus">
+                </p-inputNumber>
+                <small class="text-500 block text-right mt-1">Max Capacity: {{ editingParkingLot.capacity.normal
+                    }}</small>
+            </div>
+
+            <div class="field col-6">
+                <label for="ev-avail">EV</label>
+                <p-inputNumber id="ev-avail" [(ngModel)]="editingParkingLot.available.ev" [min]="0"
+                    [max]="editingParkingLot.capacity.ev" [showButtons]="true"
+                    inputStyleClass="text-center"></p-inputNumber>
+                <small class="text-500 block text-right mt-1">Max: {{ editingParkingLot.capacity.ev }}</small>
+            </div>
+
+            <div class="field col-6">
+                <label for="moto-avail">Motorcycles</label>
+                <p-inputNumber id="moto-avail" [(ngModel)]="editingParkingLot.available.motorcycle" [min]="0"
+                    [max]="editingParkingLot.capacity.motorcycle" [showButtons]="true"
+                    inputStyleClass="text-center"></p-inputNumber>
+                <small class="text-500 block text-right mt-1">Max: {{ editingParkingLot.capacity.motorcycle }}</small>
+            </div>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button label="Cancel" icon="pi pi-times" (onClick)="displayDialog = false"
+            styleClass="p-button-text"></p-button>
+        <p-button label="Save Changes" icon="pi pi-check" (onClick)="saveChanges()"
+            styleClass="p-button-primary"></p-button>
+    </ng-template>
+</p-dialog>

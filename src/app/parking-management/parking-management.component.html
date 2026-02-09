@@ -1,0 +1,184 @@
+<div class="flex flex-column gap-4 w-full p-4 surface-ground min-h-screen">
+
+    <!-- Summary Metrics -->
+    <div class="grid grid-nogutter gap-4">
+        <div *ngFor="let metric of metrics" class="col-12 md:col-6 lg:col-3 p-2">
+            <p-card styleClass="shadow-2 border-none h-full border-round-xl">
+                <div class="flex align-items-center justify-content-between">
+                    <div>
+                        <span class="block text-500 font-medium mb-1">{{ metric.title }}</span>
+                        <div class="text-4xl font-bold text-blue-600">{{ metric.value }}</div>
+                    </div>
+                    <div
+                        class="w-3rem h-3rem border-round bg-gray-50 flex align-items-center justify-content-center border-1 border-100">
+                        <i [class]="metric.icon" class="text-xl text-700"></i>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+    </div>
+
+    <!-- Parking List Table -->
+    <div class="bg-white border-round-xl border-1 border-100 shadow-3 overflow-hidden flex flex-column">
+
+        <!-- Table Header -->
+        <div class="flex flex-wrap align-items-center justify-content-between p-4 gap-4 border-bottom-1 border-100">
+            <div class="flex align-items-center gap-2">
+                <span class="text-blue-600 font-bold text-lg border-bottom-2 border-blue-600 pb-1">รายการสถานที่</span>
+                <p-button label="เพิ่มสถานที่ใหม่" icon="pi pi-plus-circle" [outlined]="true" size="small"
+                    styleClass="text-blue-400 border-blue-400"></p-button>
+            </div>
+
+            <p-iconField iconPosition="right">
+                <p-inputIcon styleClass="pi pi-search"></p-inputIcon>
+                <input type="text" pInputText placeholder="ค้นหาสถานที่" class="p-inputtext-sm w-15rem" />
+            </p-iconField>
+        </div>
+
+        <!-- Table Content -->
+        <p-table [value]="parkingLots" [(selection)]="selectedParkingLots" [paginator]="true" [rows]="10"
+            styleClass="p-datatable-sm" [tableStyle]="{'min-width': '60rem'}">
+            <ng-template pTemplate="header">
+                <tr class="bg-gray-50 text-gray-600 text-sm">
+                    <th style="width: 3rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
+                    <th>สถานที่</th>
+                    <th>ที่อยู่</th>
+                    <th class="text-center">ความจุ</th>
+                    <th>ประเภท</th>
+                    <th>สถานะ</th>
+                    <th>ราคา</th>
+                    <th>จัดการ</th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-lot>
+                <tr class="text-sm hover:bg-gray-50 transition-colors border-bottom-1 border-gray-50">
+                    <td><p-tableCheckbox [value]="lot"></p-tableCheckbox></td>
+                    <td>
+                        <div class="flex align-items-center gap-3" style="max-width: 300px;">
+                            <div
+                                class="w-3rem h-3rem border-round bg-gray-100 flex align-items-center justify-content-center border-1 border-gray-200 overflow-hidden flex-shrink-0">
+                                <img *ngIf="lot.images?.length" [src]="lot.images[0]" class="w-full h-full object-cover"
+                                    [alt]="lot.name">
+                                <i *ngIf="!lot.images?.length" class="pi pi-image text-gray-400"></i>
+                            </div>
+                            <div class="flex flex-column">
+                                <span
+                                    class="font-semibold text-gray-800 white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                                    [title]="lot.name">{{ lot.name }}</span>
+                                <span class="text-xs text-500">เวลาเปิด-ปิด: {{ lot.hours }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="text-500 line-height-2" style="max-width: 250px; display: block;">{{ lot.address
+                            }}</span>
+                    </td>
+                    <td class="text-center text-blue-600 font-bold">
+                        {{ lot.available.normal }}/{{ lot.capacity.normal }}
+                    </td>
+                    <td>
+                        <div class="flex flex-column gap-1 text-xs text-600">
+                            <span *ngFor="let type of lot.userTypes.split(',')"> • {{ type.trim() }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span [ngClass]="{
+                'text-blue-500': lot.status === 'available',
+                'text-yellow-500': lot.status === 'full', 
+                'text-gray-400': lot.status === 'closed'
+              }" class="font-medium">
+                            {{ getStatusLabel(lot.status) }}
+                        </span>
+                    </td>
+                    <td class="text-blue-500 font-medium">
+                        {{ lot.price === 0 ? 'ฟรี' : '฿' + lot.price + '/' + (lot.priceUnit.includes('ชม') ? 'ชั่วโมง' :
+                        'ครั้ง') }}
+                    </td>
+                    <td>
+                        <div class="flex gap-2 white-space-nowrap">
+                            <p-button label="แก้ไข" [link]="true" size="small" styleClass="p-0 text-blue-500 text-xs"
+                                (onClick)="openManageDialog(lot)"></p-button>
+                            <p-button label="ปิด" [link]="true" size="small"
+                                styleClass="p-0 text-gray-500 text-xs"></p-button>
+                            <p-button label="ลบ" [link]="true" size="small"
+                                styleClass="p-0 text-red-400 text-xs"></p-button>
+                            <p-button label="ดูประวัติ" [link]="true" size="small"
+                                styleClass="p-0 text-blue-300 text-xs"></p-button>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</div>
+
+<!-- Manage Dialog (Reused/Adapted) -->
+<p-dialog [(visible)]="displayDialog" [header]="'Manage ' + (editingParkingLot?.name || '')" [modal]="true"
+    [style]="{width: '50vw'}" [draggable]="false" [resizable]="false">
+    <div class="p-fluid grid formgrid" *ngIf="editingParkingLot">
+
+        <div class="field col-12 md:col-6">
+            <label for="name">Name</label>
+            <input pInputText id="name" [(ngModel)]="editingParkingLot.name" />
+        </div>
+
+        <div class="field col-12 md:col-6">
+            <label for="hours">Hours</label>
+            <input pInputText id="hours" [(ngModel)]="editingParkingLot.hours" />
+        </div>
+
+        <div class="field col-12 md:col-6">
+            <label for="status">Status</label>
+            <p-dropdown [options]="statusOptions" [(ngModel)]="editingParkingLot.status" placeholder="Select Status">
+                <ng-template pTemplate="selectedItem">
+                    <div *ngIf="editingParkingLot.status">
+                        <p-tag [value]="editingParkingLot.status"
+                            [severity]="getSeverity(editingParkingLot.status)"></p-tag>
+                    </div>
+                </ng-template>
+                <ng-template let-option pTemplate="item">
+                    <p-tag [value]="option.label" [severity]="getSeverity(option.value)"></p-tag>
+                </ng-template>
+            </p-dropdown>
+        </div>
+
+        <div class="field col-12 md:col-6">
+            <div class="flex align-items-center h-full pt-4">
+                <p-checkbox [(ngModel)]="editingParkingLot.hasEVCharger" [binary]="true"
+                    label="Has EV Charger"></p-checkbox>
+            </div>
+        </div>
+
+        <div class="col-12 mt-3">
+            <h5>Availability</h5>
+        </div>
+
+        <div class="field col-12 md:col-4">
+            <label for="ev-avail">EV Available</label>
+            <p-inputNumber id="ev-avail" [(ngModel)]="editingParkingLot.available.ev" [min]="0"
+                [max]="editingParkingLot.capacity.ev" [showButtons]="true"></p-inputNumber>
+            <small class="block mt-1">Capacity: {{ editingParkingLot.capacity.ev }}</small>
+        </div>
+
+        <div class="field col-12 md:col-4">
+            <label for="normal-avail">Normal Available</label>
+            <p-inputNumber id="normal-avail" [(ngModel)]="editingParkingLot.available.normal" [min]="0"
+                [max]="editingParkingLot.capacity.normal" [showButtons]="true"></p-inputNumber>
+            <small class="block mt-1">Capacity: {{ editingParkingLot.capacity.normal }}</small>
+        </div>
+
+        <div class="field col-12 md:col-4">
+            <label for="moto-avail">Motorcycle Available</label>
+            <p-inputNumber id="moto-avail" [(ngModel)]="editingParkingLot.available.motorcycle" [min]="0"
+                [max]="editingParkingLot.capacity.motorcycle" [showButtons]="true"></p-inputNumber>
+            <small class="block mt-1">Capacity: {{ editingParkingLot.capacity.motorcycle }}</small>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button label="Cancel" icon="pi pi-times" (onClick)="displayDialog = false"
+            styleClass="p-button-text"></p-button>
+        <p-button label="Save" icon="pi pi-check" (onClick)="saveChanges()" styleClass="p-button-primary"></p-button>
+    </ng-template>
+</p-dialog>

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; 
+import { FormsModule } from '@angular/forms';
 
 // PrimeNG Imports
 import { AvatarModule } from 'primeng/avatar';
@@ -41,11 +41,11 @@ import { filter } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'PrimeNG Admin';
-  activeRoute: string = ''; 
+  activeRoute: string = '';
   sidebarVisible: boolean = false;
-  
-  selectedSite: string = 'all'; 
-  
+
+  selectedSite: string = 'all';
+
   siteOptions: any[] = [
     { label: 'All Sites (ภาพรวม)', value: 'all' },
     { label: 'KMITL', value: 'kmitl' },
@@ -66,7 +66,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
         this.activeRoute = event.url;
-        this.sidebarVisible = false; 
+        this.sidebarVisible = false;
       });
   }
 
@@ -79,7 +79,9 @@ export class AppComponent implements OnInit, OnDestroy {
       { label: 'จัดการการจอง', icon: 'pi pi-th-large', route: '/reserve' },
       { label: 'จัดการผู้ใช้งาน', icon: 'pi pi-user', route: '/customer' },
       { label: 'แจ้งเตือน', icon: 'pi pi-comment', route: '/chat' },
-      { label: 'Video', icon: 'pi pi-video', route: '/video' }
+      { label: 'Video', icon: 'pi pi-video', route: '/video' },
+      { label: 'จัดการลานจอดรถ', icon: 'pi pi-car', route: '/parking' },
+      { label: 'จัดการโซน', icon: 'pi pi-map', route: '/zones' }
     ];
 
     this.bottomMenu = [

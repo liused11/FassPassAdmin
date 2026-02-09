@@ -3,6 +3,8 @@ import { provideAnimationsAsync } from "@angular/platform-browser/animations/asy
 import { provideRouter } from "@angular/router";
 import { routes } from "./app.routes";
 import { providePrimeNG } from "primeng/config";
+import { provideHttpClient } from '@angular/common/http'; // ✅ เพิ่ม
+
 
 // ✅ Import definePreset to create a custom theme
 import { definePreset } from '@primeuix/themes';
@@ -45,5 +47,6 @@ export const appConfig: ApplicationConfig = {
     }),
     importProvidersFrom(DynamicDialogModule),
     DialogService,
+    provideHttpClient(),
   ],
 };

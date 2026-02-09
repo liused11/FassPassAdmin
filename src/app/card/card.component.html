@@ -23,8 +23,14 @@
     <div class="flex flex-wrap items-center gap-3">
       <i class="pi pi-arrow-right-arrow-left text-gray-400 rotate-90 md:rotate-0"></i>
       
-      <p-calendar [(ngModel)]="selectedDate" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" 
-                  [showIcon]="true" styleClass="p-inputtext-sm w-12rem"></p-calendar>
+      <p-calendar
+        [(ngModel)]="selectedDate"
+        dateFormat="dd/mm/yy"
+        placeholder="dd/mm/yyyy"
+        [showIcon]="true"
+        styleClass="p-inputtext-sm w-12rem"
+        (onSelect)="onDateChange()">
+      </p-calendar>
       
       <p-dropdown [options]="[]" placeholder="สถานะการจอง" styleClass="p-inputtext-sm w-10rem"></p-dropdown>
       <p-dropdown [options]="[]" placeholder="อาคาร" styleClass="p-inputtext-sm w-8rem"></p-dropdown>

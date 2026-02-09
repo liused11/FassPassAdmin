@@ -13,6 +13,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { CalendarModule } from 'primeng/calendar';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { ReservationService } from '../service/reservation.service';
 
 @Component({
   selector: 'app-card',
@@ -35,11 +37,19 @@ import { InputIconModule } from 'primeng/inputicon';
   styleUrls: ['./card.component.css']
 })
 export class CardComponent implements OnInit {
+  // ===============================
+  // Supabase client 
+  // ===============================
+  supabase: SupabaseClient = createClient(
+    'https://unxcjdypaxxztywplqdv.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
+  );
   
   selectedDate: Date | undefined;
   selectedReservations: any[] = [];
+  loading = false;
 
-  // Metrics Data
+  /*// Metrics Data
   metrics = [
     { title: 'รายการจอง', value: '1,247', subtext: '+2 การจอง', icon: 'pi pi-users' },
     { title: 'การจองที่ยังไม่ถึงเวลา', value: '892', subtext: '+1 การจอง', icon: 'pi pi-clock' },
@@ -81,9 +91,61 @@ export class CardComponent implements OnInit {
     { user: 'อาทิตย์ สดใส', id: 'A25681201', date: '01/12/2568', time: '08.00-17.00', room: 'E12-205', type: 'Business', invitee: '-', status: 'ยังไม่ใช้งาน' },
     { user: 'นภา ฟ้าคราม', id: 'N25681210', date: '10/12/2568', time: '00.00-23.59', room: 'E12-204', type: '1-Day', invitee: 'ครอบครัว', status: 'ยังไม่ใช้งาน' },
     { user: 'ธนา พาณิชย์', id: 'T25681225', date: '25/12/2568', time: '18.00-22.00', room: 'E12-EventHall', type: 'Event', invitee: 'พนักงานทุกคน', status: 'ยังไม่ใช้งาน' }
-];
+];*/
+   
+  metrics: any[] = [];
+  reservations: any[] = [];
+  constructor(private reservationService: ReservationService) {}
+  async ngOnInit() {
+    // 🔐 mock login (เหมือนต้นแบบ)
+    await this.supabase.auth.signInWithPassword({
+      email: 'test@test.com',
+      password: '12345678',
+    });
 
-  ngOnInit() {}
+    this.loadReservationData();
+  }
+
+  // ===============================
+  // Load data from Edge
+  // ===============================
+  async loadReservationData() {
+    this.loading = true;
+
+    const { data } = await this.supabase.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) {
+      console.error('No session token');
+      this.loading = false;
+      return;
+    }
+
+    // default = วันนี้
+    const date =
+      this.selectedDate
+        ? this.selectedDate.toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+
+    this.reservationService.getUserReservations(date, token).subscribe({
+      next: (res: any) => {
+        this.metrics = res.metrics;
+        this.reservations = res.reservations;
+        this.loading = false;
+      },
+      error: (err: any) => {
+        console.error('Failed to load reservations', err);
+        this.loading = false;
+      },
+    });
+  }
+
+  // ===============================
+  // Calendar change
+  // ===============================
+  onDateChange() {
+    this.loadReservationData();
+  }
 
   // Helper for Tag Severity
   // Note: p-tag uses 'warning', p-button uses 'warn'

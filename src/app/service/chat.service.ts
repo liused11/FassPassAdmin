@@ -16,8 +16,7 @@ export interface ChatMessage {
   avatar: string;
   content: string;
   time: string;
-  own?: boolean; 
-  //d
+  own?: boolean;
 }
 
 @Injectable({

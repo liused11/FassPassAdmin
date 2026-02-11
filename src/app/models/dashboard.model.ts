@@ -1,3 +1,4 @@
+// app/models/dashboard.model
 export interface Metric {
   title: string;
   value: string;

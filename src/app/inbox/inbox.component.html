@@ -46,21 +46,26 @@
       <ng-template pTemplate="header">
         <tr class="bg-gray-50 text-gray-600 text-sm">
           <th style="width: 3rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
-          <th>อาคาร</th>
-          <th>ที่อยู่</th>
-          <th class="text-center">ผู้มาเยี่ยมในขณะนี้</th>
-          <th class="text-center">การจองในวันนี้</th>
+          <th>สถานที่</th>
+          <th class="text-center">ความจุ</th>
+          <th>ประเภท</th>
           <th>สถานะ</th>
+          <th>ราคา</th>
+          <th>อัตรา</th>
           <th>จัดการ</th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-building>
         <tr class="text-sm hover:bg-gray-50 transition-colors border-bottom-1 border-gray-50">
-          <td><p-tableCheckbox [value]="building"></p-tableCheckbox></td>
+          <td>
+            <p-tableCheckbox [value]="building"></p-tableCheckbox>
+          </td>
+
+          <!-- สถานที่ -->
           <td>
             <div class="flex align-items-center gap-3">
-              <div class="w-2rem h-2rem border-round bg-gray-100 flex align-items-center justify-center border-1 border-gray-200">
+              <div class="w-2rem h-2rem border-round bg-gray-100 flex align-items-center justify-content-center border-1 border-gray-200">
                 <i class="pi pi-image text-gray-400"></i>
               </div>
               <div class="flex flex-column">
@@ -69,16 +74,38 @@
               </div>
             </div>
           </td>
-          <td class="text-blue-500">{{ building.zone }}</td>
-          <td class="text-center text-blue-600 font-bold text-lg">{{ building.visitors }}</td>
-          <td class="text-center text-blue-600 font-bold text-lg">{{ building.bookings }}</td>
-          <td>
-            <span [ngClass]="{
-              'text-blue-500': building.status === 'เปิดทำการ',
-              'text-yellow-500': building.status === 'กำลังจะเปิด',
-              'text-gray-400': building.status === 'ปิดทำการ'
-            }">{{ building.status }}</span>
+
+          <!-- ความจุ -->
+          <td class="text-center text-blue-600 font-semibold">
+            {{ building.capacity }}
           </td>
+
+          <!-- ประเภท -->
+          <td>
+            <ul class="list-none p-0 m-0 text-sm text-600">
+              <li *ngFor="let t of building.types">• {{ t }}</li>
+            </ul>
+          </td>
+
+          <!-- สถานะ (ถ้ายังอยากแสดง) -->
+          <td>
+            <p-tag
+              [value]="building.status"
+              [severity]="getSeverity(building.status)">
+            </p-tag>
+          </td>
+
+          <!-- ราคา -->
+          <td class="text-blue-500 font-medium">
+            {{ building.price }}
+          </td>
+
+          <!-- อัตรา -->
+          <td class="text-500">
+            {{ building.rate }}
+          </td>
+
+          <!-- ✅ จัดการ (เหลือแค่นี้พอ) -->
           <td>
             <div class="flex gap-2">
               <p-button label="แก้ไข" [link]="true" size="small" styleClass="p-0 text-blue-500 text-xs"></p-button>

@@ -34,3 +34,18 @@ export interface ActivityLog {
   changes?: Change[];
   meta?: Meta;
 }
+
+export interface Reservation {
+  id: string;
+  user_id: string;
+  user: string;
+  email: string;
+  phone: string;
+  date: string;
+  time: string;
+  room: string;
+  type: string;
+  status: string;
+  color: string;
+  original_status: string;
+}

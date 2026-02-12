@@ -16,6 +16,7 @@ import { AvatarModule } from 'primeng/avatar';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { BadgeModule } from 'primeng/badge';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { UserManagementService, UserManagementResponse } from '../service/user-management.service';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -55,7 +56,8 @@ interface User {
     AvatarModule,
     TagModule,
     TooltipModule,
-    BadgeModule
+    BadgeModule,
+    ProgressSpinnerModule
   ],
   templateUrl: './customer.component.html',
   styles: [`
@@ -118,10 +120,13 @@ export class CustomerComponent implements OnInit {
 
   // Data
   allUsers: User[] = [];
+  loading: boolean = false;
 
   constructor(private userManagementService: UserManagementService) { }
 
   async ngOnInit() {
+    this.loading = true; // Start loading
+
     // Authenticate (using hardcoded credentials as per existing Dashboard pattern)
     const { data: { session } } = await this.supabase.auth.getSession();
 
@@ -141,6 +146,7 @@ export class CustomerComponent implements OnInit {
 
     if (!token) {
       console.error('No session token available');
+      this.loading = false;
       return;
     }
 
@@ -182,9 +188,11 @@ export class CustomerComponent implements OnInit {
             avatarUrl: p.avatar
           }));
         }
+        this.loading = false; // Stop loading
       },
       error: (err: any) => {
         console.error('Error fetching user profiles:', err);
+        this.loading = false; // Stop loading
       }
     });
   }

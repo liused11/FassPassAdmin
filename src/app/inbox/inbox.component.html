@@ -1,5 +1,10 @@
-<div class="flex flex-column gap-4 w-full p-4 surface-ground min-h-screen">
-  
+<div class="flex flex-column gap-4 w-full p-4 surface-ground min-h-screen relative">
+  <div *ngIf="loading"
+    class="fixed top-0 left-0 w-full h-full flex align-items-center justify-content-center bg-white-alpha-70"
+    style="z-index: 9999;">
+    <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="4"></p-progressSpinner>
+  </div>
+
   <div class="grid grid-nogutter gap-4">
     <div *ngFor="let metric of metrics" class="col-12 md:col-6 lg:col-3 p-2">
       <p-card styleClass="shadow-2 border-none h-full border-round-xl">
@@ -8,7 +13,8 @@
             <span class="block text-500 font-medium mb-1">{{ metric.title }}</span>
             <div class="text-4xl font-bold text-blue-600">{{ metric.value }}</div>
           </div>
-          <div class="w-3rem h-3rem border-round bg-gray-50 flex align-items-center justify-content-center border-1 border-100">
+          <div
+            class="w-3rem h-3rem border-round bg-gray-50 flex align-items-center justify-content-center border-1 border-100">
             <i [class]="metric.icon" class="text-xl text-700"></i>
           </div>
         </div>
@@ -16,7 +22,8 @@
     </div>
   </div>
 
-    <div class="w-full bg-white p-3 border-round-xl shadow-1 border-1 border-100 flex flex-wrap align-items-center justify-content-between gap-3">
+  <div
+    class="w-full bg-white p-3 border-round-xl shadow-1 border-1 border-100 flex flex-wrap align-items-center justify-content-between gap-3">
     <div class="flex flex-wrap align-items-center gap-2">
       <i class="pi pi-arrow-right-arrow-left text-400 rotate-90 md:rotate-0"></i>
       <p-dropdown [options]="[]" placeholder="ประเภทพาหนะ" styleClass="p-inputtext-sm w-12rem"></p-dropdown>
@@ -29,11 +36,12 @@
 
 
   <div class="bg-white border-round-xl border-1 border-100 shadow-3 overflow-hidden flex flex-column">
-    
+
     <div class="flex flex-wrap align-items-center justify-between p-4 gap-4 border-bottom-1 border-100">
       <div class="flex align-items-center gap-2">
         <span class="text-blue-600 font-bold text-lg border-bottom-2 border-blue-600 pb-1">รายการสถานที่</span>
-        <p-button label="เพิ่มอาคาร" icon="pi pi-plus-circle" [outlined]="true" size="small" styleClass="text-blue-400 border-blue-400"></p-button>
+        <p-button label="เพิ่มอาคาร" icon="pi pi-plus-circle" [outlined]="true" size="small"
+          styleClass="text-blue-400 border-blue-400"></p-button>
       </div>
 
       <p-iconField iconPosition="right">
@@ -42,7 +50,8 @@
       </p-iconField>
     </div>
 
-    <p-table [value]="buildings" [(selection)]="selectedBuildings" [paginator]="true" [rows]="10" styleClass="p-datatable-sm">
+    <p-table [value]="buildings" [(selection)]="selectedBuildings" [paginator]="true" [rows]="10"
+      styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
         <tr class="bg-gray-50 text-gray-600 text-sm">
           <th style="width: 3rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
@@ -65,7 +74,8 @@
           <!-- สถานที่ -->
           <td>
             <div class="flex align-items-center gap-3">
-              <div class="w-2rem h-2rem border-round bg-gray-100 flex align-items-center justify-content-center border-1 border-gray-200">
+              <div
+                class="w-2rem h-2rem border-round bg-gray-100 flex align-items-center justify-content-center border-1 border-gray-200">
                 <i class="pi pi-image text-gray-400"></i>
               </div>
               <div class="flex flex-column">
@@ -89,9 +99,7 @@
 
           <!-- สถานะ (ถ้ายังอยากแสดง) -->
           <td>
-            <p-tag
-              [value]="building.status"
-              [severity]="getSeverity(building.status)">
+            <p-tag [value]="building.status" [severity]="getSeverity(building.status)">
             </p-tag>
           </td>
 

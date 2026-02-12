@@ -15,6 +15,7 @@ import { CalendarModule } from 'primeng/calendar';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ReservationService } from '../service/reservation.service';
 
 @Component({
@@ -32,7 +33,9 @@ import { ReservationService } from '../service/reservation.service';
     DropdownModule,
     CalendarModule,
     IconFieldModule,
-    InputIconModule
+    IconFieldModule,
+    InputIconModule,
+    ProgressSpinnerModule
   ],
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.css']

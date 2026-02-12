@@ -1,4 +1,10 @@
-<div class="flex flex-column md:flex-row gap-4 w-full p-3 md:p-4 surface-ground min-h-screen align-items-start">
+<div
+    class="flex flex-column md:flex-row gap-4 w-full p-3 md:p-4 surface-ground min-h-screen align-items-start relative">
+    <div *ngIf="loading"
+        class="fixed top-0 left-0 w-full h-full flex align-items-center justify-content-center bg-white-alpha-70"
+        style="z-index: 9999;">
+        <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="4"></p-progressSpinner>
+    </div>
 
     <div class="w-full md:w-16rem surface-card shadow-2 border-round-xl p-2 md:p-3 flex-shrink-0 md:sticky md:top-0">
         <div class="text-900 font-bold text-lg md:text-xl mb-2 md:mb-3 px-2 hidden md:block">User Groups</div>

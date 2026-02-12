@@ -24,6 +24,7 @@ import { BadgeModule } from 'primeng/badge';
 import { SidebarModule } from 'primeng/sidebar';
 import { TooltipModule } from 'primeng/tooltip';
 import { TimelineModule } from 'primeng/timeline';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { createClient } from '@supabase/supabase-js';
 
 @Component({
@@ -34,7 +35,7 @@ import { createClient } from '@supabase/supabase-js';
     ButtonModule, InputTextModule, DropdownModule,
     CalendarModule, TableModule, TagModule, CheckboxModule, CardModule,
     IconFieldModule, InputIconModule, AvatarModule, TabViewModule, BadgeModule,
-    SidebarModule, TooltipModule, TimelineModule
+    SidebarModule, TooltipModule, TimelineModule, ProgressSpinnerModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
@@ -56,6 +57,7 @@ export class DashboardComponent implements OnInit {
   historyVisible: boolean = false;
   selectedUserHistory: ActivityLog[] = [];
   currentUser: string = '';
+  loading: boolean = false; // Add loading state
 
   // ✅ DashboardService will now be found because the file exists
   constructor(private dashboardService: DashboardService) { }
@@ -91,12 +93,18 @@ export class DashboardComponent implements OnInit {
         ? this.selectedDate.toISOString().slice(0, 10)
         : new Date().toISOString().slice(0, 10);
 
+    this.loading = true; // Start loading
+
     this.dashboardService.getAllActivities(date, token).subscribe({
       next: (res: any) => {
         this.metrics = res.metrics;
         this.allActivities = res.activities;
+        this.loading = false; // Stop loading
       },
-      error: (err: any) => console.error('Failed to load activities', err)
+      error: (err: any) => {
+        console.error('Failed to load activities', err);
+        this.loading = false; // Stop loading
+      }
     });
   }
 

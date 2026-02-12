@@ -17,6 +17,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { ParkingService } from '../service/inbox-parking.service';
 import { createClient } from '@supabase/supabase-js';
 import { HttpClientModule } from '@angular/common/http';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
   selector: 'app-inbox',
@@ -34,7 +35,8 @@ import { HttpClientModule } from '@angular/common/http';
     IconFieldModule,
     InputIconModule,
     HttpClientModule,
-    RouterOutlet
+    RouterOutlet,
+    ProgressSpinnerModule
   ],
   templateUrl: './inbox.component.html',
   styleUrls: ['./inbox.component.css']
@@ -136,15 +138,17 @@ export class InboxComponent implements OnInit {
     'https://unxcjdypaxxztywplqdv.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
   );
-  
+
   metrics: any[] = [];
   buildings: any[] = [];
 
   selectedBuildings: any[] = [];
+  loading: boolean = false;
 
-  constructor(private parkingService: ParkingService) {}
+  constructor(private parkingService: ParkingService) { }
 
   async ngOnInit() {
+    this.loading = true; // Start loading
     await this.supabase.auth.signInWithPassword({
       email: 'test@test.com',
       password: '12345678'
@@ -159,6 +163,7 @@ export class InboxComponent implements OnInit {
 
     if (!token) {
       console.error('No session token');
+      this.loading = false;
       return;
     }
     this.parkingService.getDashboard(token).subscribe(res => {
@@ -170,9 +175,9 @@ export class InboxComponent implements OnInit {
 
       this.buildings = summary.map((b: any) => ({
         name: b.name,
-        capacity:   b.total > 0
-                    ? `${b.total - b.used}/${b.total}`// ความจุ
-                    : '-',
+        capacity: b.total > 0
+          ? `${b.total - b.used}/${b.total}`// ความจุ
+          : '-',
         types: b.types ?? [],  // ประเภท
         detail: `เวลาเปิด-ปิด: ${b.open_time} - ${b.close_time}`,
         status: b.status,
@@ -181,6 +186,10 @@ export class InboxComponent implements OnInit {
         openTime: b.open_time,
         closeTime: b.close_time
       }));
+      this.loading = false; // Stop loading
+    }, err => {
+      console.error(err);
+      this.loading = false;
     });
   }
 

@@ -1,4 +1,9 @@
-<div class="flex flex-column gap-4 w-full p-3 md:p-4 surface-ground">
+<div class="flex flex-column gap-4 w-full p-3 md:p-4 surface-ground relative">
+    <div *ngIf="loading"
+        class="fixed top-0 left-0 w-full h-full flex align-items-center justify-content-center bg-white-alpha-70"
+        style="z-index: 9999;">
+        <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="4"></p-progressSpinner>
+    </div>
 
     <div class="grid grid-nogutter gap-3 md:gap-4">
         <div *ngFor="let metric of metrics" class="col-12 md:col-6 lg:col-3">

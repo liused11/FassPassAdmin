@@ -13,6 +13,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ParkingLot } from '../models/parking.model';
 import { ParkingService } from '../service/parking.service';
 
@@ -33,7 +34,10 @@ import { ParkingService } from '../service/parking.service';
         CheckboxModule,
         TableModule,
         IconFieldModule,
-        InputIconModule
+        TableModule,
+        IconFieldModule,
+        InputIconModule,
+        ProgressSpinnerModule
     ],
     templateUrl: './parking-management.component.html',
     styleUrls: ['./parking-management.component.scss']
@@ -48,6 +52,7 @@ export class ParkingManagementComponent implements OnInit {
     editingParkingLot: ParkingLot | any = {};
 
     metrics: any[] = [];
+    loading: boolean = false;
 
     statusOptions = [
         { label: 'Available', value: 'available' },
@@ -58,9 +63,14 @@ export class ParkingManagementComponent implements OnInit {
     constructor(private parkingService: ParkingService) { }
 
     ngOnInit(): void {
+        this.loading = true;
         this.parkingService.getParkingLots().subscribe(data => {
             this.parkingLots = data;
             this.calculateMetrics();
+            this.loading = false;
+        }, error => {
+            console.error(error);
+            this.loading = false;
         });
     }
 

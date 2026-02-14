@@ -64,6 +64,7 @@
                     styleClass="p-datatable-sm">
                     <ng-template pTemplate="header">
                         <tr class="text-sm bg-gray-50 white-space-nowrap">
+                            <th style="min-width: 100px">วันที่</th>
                             <th style="min-width: 100px">เวลา</th>
                             <th style="min-width: 100px">Type</th>
                             <th style="min-width: 150px">Action</th>
@@ -74,7 +75,13 @@
                     </ng-template>
                     <ng-template pTemplate="body" let-log>
                         <tr class="text-sm hover:surface-50 transition-colors white-space-nowrap">
-                            <td class="font-semibold text-600">{{ log.time }}</td>
+                            <td class="font-semibold text-600">
+                                {{ log.time | date:'dd/MM/yyyy':'Asia/Bangkok' }}
+                            </td>
+
+                            <td class="font-semibold text-600">
+                                {{ log.time | date:'HH:mm':'Asia/Bangkok' }}
+                            </td>
                             <td>
                                 <div class="flex align-items-center gap-2 text-700">
                                     <i [class]="getActivityIcon(log.type)"></i>

@@ -105,7 +105,13 @@
 
           <!-- ราคา -->
           <td class="text-blue-500 font-medium">
-            {{ building.price }}
+            <ng-container *ngIf="building.price === 0">
+              ฿0
+            </ng-container>
+
+            <ng-container *ngIf="building.price > 0">
+              ฿{{ building.price | number }} {{ building.priceInfo }}
+            </ng-container>
           </td>
 
           <!-- อัตรา -->

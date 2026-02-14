@@ -80,20 +80,20 @@ export class DashboardComponent implements OnInit {
     });*/
 
     const { data } = await this.supabase.auth.getSession();
-
     const token = data.session?.access_token;
 
     if (!token) {
       console.error('No session token');
       return;
     }
+
+    this.loading = true; // Start loading
     // default = วันนี้
+    
     const date =
       this.selectedDate
         ? this.selectedDate.toISOString().slice(0, 10)
-        : new Date().toISOString().slice(0, 10);
-
-    this.loading = true; // Start loading
+        : null
 
     this.dashboardService.getAllActivities(date, token).subscribe({
       next: (res: any) => {

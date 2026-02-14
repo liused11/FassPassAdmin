@@ -25,12 +25,21 @@ export class DashboardService {
   /*getAllActivities(): Observable<ActivityLog[]> {
     return this.http.get<ActivityLog[]>(`${this.apiUrl}/activities`);
   }*/
-  getAllActivities(date: string, token: string): Observable<any> {
+  getAllActivities(date: string | null, token: string): Observable<any> {
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
       apikey: this.anonKey
     });
 
-    return this.http.get<any>(`${this.edgeUrl}?date=${date}`, { headers });
+      
+    let url = this.edgeUrl;
+
+    // ✅ ส่ง date เฉพาะตอนมีค่า
+    if (date) {
+      url += `?date=${date}`;
+    }
+    
+
+    return this.http.get<any>(url, { headers });
   }
 }

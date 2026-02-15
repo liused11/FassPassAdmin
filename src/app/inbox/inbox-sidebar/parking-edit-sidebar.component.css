@@ -1,0 +1,185 @@
+/* ===== SIDEBAR WIDTH ===== */
+.parking-sidebar {
+  width: 50vw !important;      /* ครึ่งหน้าจอ */
+  max-width: 50vw !important;
+  border-radius: 16px 0 0 16px;
+  padding: 0;
+}
+
+::ng-deep .p-drawer {
+  width: calc(100vw / 3) !important;
+  max-width: calc(100vw / 3) !important;
+}
+
+/* Loading */
+.loading-wrapper {
+  padding: 32px;
+}
+
+/* ===== CONTENT LAYOUT ===== */
+.sidebar-content {
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0px 32px 32px 32px;  /* ลด top padding */
+  gap: 28px;
+  background: #ffffff;
+}
+
+/* Header */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.status-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+/* Section */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.section-title.blue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #155eef;
+  border-bottom: 1px solid #e4e7ec;
+  padding-bottom: 6px;
+}
+
+.section-title.blue i {
+  font-size: 14px;
+}
+
+/* Map */
+.map-box {
+  border: 1px solid #e4e7ec;
+  border-radius: 14px;
+  padding: 36px;
+  text-align: center;
+  color: #667085;
+  background: #f9fafb;
+}
+
+.map-box i {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+/* Fields */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Two col */
+.two-col {
+  display: flex;
+  gap: 20px;
+}
+
+.two-col .field {
+  flex: 1;
+}
+
+/* Inputs */
+.p-inputtext,
+.p-dropdown,
+.p-inputnumber-input,
+textarea {
+  border-radius: 12px !important;
+  height: 48px !important;
+  font-size: 14px;
+}
+
+textarea {
+  height: auto !important;
+  padding-top: 10px;
+}
+
+/* Vehicle pill */
+.vehicle-pill-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vehicle-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid #d0d5dd;
+  background: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.vehicle-pill .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #d0d5dd;
+}
+
+.vehicle-pill.active {
+  border: 1px solid #155eef;
+  background: #eaf1ff;
+  color: #155eef;
+}
+
+.vehicle-pill.active .dot {
+  background-color: #155eef;
+}
+
+/* Footer */
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid #e4e7ec;
+}
+
+.cancel-btn {
+  flex: 1;
+  border-radius: 999px !important;
+  background: #f2f4f7 !important;
+  height: 50px;
+  font-weight: 500;
+  border: none !important;
+}
+
+.save-btn {
+  flex: 1;
+  border-radius: 999px !important;
+  background: #155eef !important;
+  height: 50px;
+  font-weight: 600;
+  border: none !important;
+}

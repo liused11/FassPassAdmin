@@ -31,8 +31,8 @@ export interface ActivityLog {
   status: 'success' | 'warning' | 'denied' | 'error';
   entityId?: string;
   detail?: string;
-  changes?: Change[];
-  meta?: Meta;
+  changes?: Change[] | null;
+  meta?: Meta | null;
 }
 
 export interface Reservation {

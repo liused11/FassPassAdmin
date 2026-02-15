@@ -26,6 +26,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { TimelineModule } from 'primeng/timeline';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { createClient } from '@supabase/supabase-js';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
@@ -95,17 +96,75 @@ export class DashboardComponent implements OnInit {
         ? this.selectedDate.toISOString().slice(0, 10)
         : null
 
-    this.dashboardService.getAllActivities(date, token).subscribe({
-      next: (res: any) => {
-        this.metrics = res.metrics;
-        this.allActivities = res.activities;
-        this.loading = false; // Stop loading
-      },
-      error: (err: any) => {
-        console.error('Failed to load activities', err);
-        this.loading = false; // Stop loading
-      }
-    });
+    this.dashboardService.getAllActivities(date, token)
+      .pipe(
+        finalize(() => this.loading = false)
+      )
+      .subscribe({
+        next: (res: any) => {
+          this.metrics = res.metrics;
+          this.allActivities = res.activities.map((a: any) => {
+
+            // ===== parse changes =====
+            let parsedChanges: any[] = [];
+
+            if (a.log_type === 'revision' && a.changes) {
+              try {
+                const changesObj = typeof a.changes === 'string'
+                  ? JSON.parse(a.changes)
+                  : a.changes;
+
+                parsedChanges = Object.keys(changesObj).map(key => ({
+                  field: key,
+                  old: changesObj[key]?.old,
+                  new: changesObj[key]?.new
+                }));
+              } catch (err) {
+                console.error('Invalid changes JSON:', a.changes);
+                parsedChanges = [];
+              }
+            }
+
+
+            // ===== parse meta =====
+            let parsedMeta = null;
+            if (a.meta) {
+              try {
+                parsedMeta = typeof a.meta === 'string'
+                  ? JSON.parse(a.meta)
+                  : a.meta;
+              } catch (err) {
+                console.error('Invalid meta JSON:', a.meta);
+                parsedMeta = null;
+              }
+            }
+
+            return {
+              id: a.id,
+              time: a.time,
+              type: a.entity_type || a.action, // ✅ เพิ่ม type กัน undefined
+              action: a.action,
+              category: a.category,
+              status: a.status,
+
+              // rename snake_case → camelCase
+              logType: a.log_type,
+              user: a.user_name,
+              entityId: a.entity_id,
+              entityType: a.entity_type,
+
+              detail: a.detail,
+              changes: parsedChanges,
+              meta: parsedMeta
+            };
+          });
+          this.loading = false; // Stop loading
+        },
+        error: (err: any) => {
+          console.error('Failed to load activities', err);
+          this.loading = false; // Stop loading
+        }
+      });
   }
 
   get normalActivities() {

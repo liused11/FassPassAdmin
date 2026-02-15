@@ -39,12 +39,12 @@
                         [showIcon]="true" styleClass="w-full md:w-10rem p-inputtext-sm"></p-calendar>
                     <!-- ✅ ⭐ ADD THIS CLEAR BUTTON HERE -->
                     <p-button 
+                        *ngIf="selectedDate"
                         icon="pi pi-times"
                         (click)="selectedDate = undefined; loadDashboardData()"
                         severity="secondary"
                         size="small"
-                        [text]="true"
-                        pTooltip="Clear date filter">
+                        [text]="true">
                     </p-button>
 
                     <p-iconField iconPosition="right" class="w-full md:w-auto">
@@ -210,10 +210,10 @@
                                 }}</span>
                         </div>
                         <div class="flex flex-column align-items-end flex-shrink-0 ml-2">
-                            <span class="text-xs font-mono text-500">{{ log.time }}</span>
+                            <span class="text-xs font-mono text-500">{{ log.time | date:'dd MMM yyyy, HH:mm' }}</span>
                             <span class="text-[10px] font-bold px-2 border-round text-white mt-1"
                                 [ngClass]="log.logType === 'revision' ? 'bg-orange-500' : 'bg-blue-500'">
-                                {{ log.logType === 'revision' ? 'UPDATE' : 'ACT' }}
+                                {{ log.logType === 'revision' ? 'REVISION' : 'ACTIVITY' }}
                             </span>
                         </div>
                     </div>
@@ -245,7 +245,19 @@
                         </div>
 
                         <div *ngIf="log.logType === 'activity'">
-                            <div class="grid grid-nogutter bg-blue-50 border-round p-2 text-sm text-700">
+                            <div class="p-2 text-sm">
+                                <div class="mb-2">
+                                    <span class="font-semibold">Detail:</span>
+                                    {{ log.detail }}
+                                </div>
+
+                                <div *ngIf="log.meta">
+                                    <div>Location: {{ log.meta?.location }}</div>
+                                    <div>Device: {{ log.meta?.device }}</div>
+                                    <div>Result: {{ log.meta?.verification }}</div>
+                                </div>
+                            </div>
+                            <!-- <div class="grid grid-nogutter bg-blue-50 border-round p-2 text-sm text-700">
                                 <div class="col-12 flex align-items-center mb-2">
                                     <i class="pi pi-map-marker text-blue-500 mr-2"></i>
                                     <span class="font-semibold mr-2">Loc:</span>
@@ -266,8 +278,8 @@
                                         {{ log.meta?.verification }}
                                     </span>
                                 </div>
-                            </div>
-                        </div>
+                            </div> -->
+                        </div> 
 
                     </div>
                 </div>
@@ -279,8 +291,3 @@
             </div>
         </div>
     </p-sidebar>
-
-
-    <p-calendar [(ngModel)]="selectedDate" (onSelect)="loadDashboardData()" ...></p-calendar>
-
-    

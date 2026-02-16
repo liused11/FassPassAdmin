@@ -1,7 +1,8 @@
+<!-- inbox.component.html -->
 <div class="flex flex-column gap-4 w-full p-4 surface-ground min-h-screen relative">
   <div *ngIf="loading"
     class="fixed top-0 left-0 w-full h-full flex align-items-center justify-content-center bg-white-alpha-70"
-    style="z-index: 9999;">
+    style="z-index: 500;">
     <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="4"></p-progressSpinner>
   </div>
 
@@ -56,6 +57,7 @@
         <tr class="bg-gray-50 text-gray-600 text-sm">
           <th style="width: 3rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
           <th>สถานที่</th>
+          <th>ที่อยู่</th>
           <th class="text-center">ความจุ</th>
           <th>ประเภท</th>
           <th>สถานะ</th>
@@ -85,9 +87,33 @@
             </div>
           </td>
 
-          <!-- ความจุ -->
-          <td class="text-center text-blue-600 font-semibold">
-            {{ building.capacity }}
+          <!-- ที่อยู่ -->
+          <td class="text-500">
+            {{ building.address || 'ยังไม่ได้ระบุที่อยู่' }}
+          </td>
+
+          <td class="text-center font-semibold">
+
+            <!-- ถ้ามีช่องว่าง -->
+            <ng-container *ngIf="building.available > 0; else fullBlock">
+
+              <span class="text-blue-600">
+                {{ building.available }}
+              </span>
+
+              /{{ building.total }}
+
+            </ng-container>
+
+            <!-- ถ้าเต็ม -->
+            <ng-template #fullBlock>
+              <span class="text-red-600">
+                เต็ม
+              </span>
+
+              /{{ building.total }}
+            </ng-template>
+
           </td>
 
           <!-- ประเภท -->
@@ -122,7 +148,13 @@
           <!-- ✅ จัดการ (เหลือแค่นี้พอ) -->
           <td>
             <div class="flex gap-2">
-              <p-button label="แก้ไข" [link]="true" size="small" styleClass="p-0 text-blue-500 text-xs"></p-button>
+              <p-button 
+                label="แก้ไข" 
+                [link]="true" 
+                size="small"
+                styleClass="p-0 text-blue-500 text-xs"
+                (click)="openEdit(building)">  <!-- ✅ ADD THIS -->
+              </p-button>
               <p-button label="ปิด" [link]="true" size="small" styleClass="p-0 text-blue-400 text-xs"></p-button>
               <p-button label="ลบ" [link]="true" size="small" styleClass="p-0 text-blue-400 text-xs"></p-button>
               <p-button label="ดูประวัติ" [link]="true" size="small" styleClass="p-0 text-blue-300 text-xs"></p-button>
@@ -131,5 +163,11 @@
         </tr>
       </ng-template>
     </p-table>
+    <app-parking-edit-sidebar
+      [(visible)]="sidebarVisible"
+      [data]="selectedBuilding"
+      [loading]="loading" 
+      (save)="handleSave($event)">
+    </app-parking-edit-sidebar>
   </div>
 </div>

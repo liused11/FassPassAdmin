@@ -105,23 +105,57 @@ export class DashboardComponent implements OnInit {
           this.metrics = res.metrics;
           this.allActivities = res.activities.map((a: any) => {
 
-            // ===== parse changes =====
-            let parsedChanges: any[] = [];
+            // ===== parse revision snapshot =====
+            let revisionRows: any[] = [];
+            let parsedOld: any = null;
+            let parsedNew: any = null;
 
-            if (a.log_type === 'revision' && a.changes) {
+            if (a.log_type === 'revision') {
               try {
-                const changesObj = typeof a.changes === 'string'
-                  ? JSON.parse(a.changes)
-                  : a.changes;
+                parsedOld = a.old_data
+                  ? (typeof a.old_data === 'string' ? JSON.parse(a.old_data) : a.old_data)
+                  : null;
 
-                parsedChanges = Object.keys(changesObj).map(key => ({
-                  field: key,
-                  old: changesObj[key]?.old,
-                  new: changesObj[key]?.new
-                }));
+                parsedNew = a.new_data
+                  ? (typeof a.new_data === 'string' ? JSON.parse(a.new_data) : a.new_data)
+                  : null;
+
+                // ✅ ถ้ามี snapshot เต็ม
+                if (parsedOld && parsedNew) {
+                  const allKeys = new Set([
+                    ...Object.keys(parsedOld),
+                    ...Object.keys(parsedNew)
+                  ]);
+
+                  revisionRows = Array.from(allKeys).map(key => {
+                    const oldVal = parsedOld?.[key] ?? null;
+                    const newVal = parsedNew?.[key] ?? null;
+
+                    return {
+                      field: key,
+                      old: oldVal,
+                      new: newVal,
+                      changed: JSON.stringify(oldVal) !== JSON.stringify(newVal)
+                    };
+                  });
+                }
+
+                // ⚠ fallback ช่วงเปลี่ยนผ่าน (old/new ยัง null)
+                else if (a.changes) {
+                  const changesObj = typeof a.changes === 'string'
+                    ? JSON.parse(a.changes)
+                    : a.changes;
+
+                  revisionRows = Object.keys(changesObj).map(key => ({
+                    field: key,
+                    old: changesObj[key]?.old,
+                    new: changesObj[key]?.new,
+                    changed: true
+                  }));
+                }
+
               } catch (err) {
-                console.error('Invalid changes JSON:', a.changes);
-                parsedChanges = [];
+                console.error('Invalid revision JSON:', err);
               }
             }
 
@@ -154,7 +188,7 @@ export class DashboardComponent implements OnInit {
               entityType: a.entity_type,
 
               detail: a.detail,
-              changes: parsedChanges,
+              revisionRows,
               meta: parsedMeta
             };
           });

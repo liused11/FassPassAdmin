@@ -27,6 +27,9 @@ import { TimelineModule } from 'primeng/timeline';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { createClient } from '@supabase/supabase-js';
 import { finalize } from 'rxjs/operators';
+import { SiteStateService } from '../service/site/site-state.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
@@ -61,32 +64,51 @@ export class DashboardComponent implements OnInit {
   loading: boolean = false; // Add loading state
 
   // ✅ DashboardService will now be found because the file exists
-  constructor(private dashboardService: DashboardService) { }
+  constructor(
+    private dashboardService: DashboardService,
+    private siteStateService: SiteStateService,
+  ) { }
+
+  private token: string | null = null;
+
+
+
+  get selectedSite(): string {
+    return this.siteStateService.getCurrentSite();
+  }
+
+  private destroy$ = new Subject<void>();
 
   async ngOnInit() {
-    await this.supabase.auth.signInWithPassword({
-      email: 'test@test.com',
-      password: '12345678'
-    });
+    const { data } = await this.supabase.auth.getSession();
+    this.token = data.session?.access_token ?? null;
 
-    this.loadDashboardData();
+    if (!this.token) {
+      console.error('No session');
+      return;
+    }
+
+    this.siteStateService.site$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(siteId => {
+        if (this.token) {
+          this.loadDashboardData(siteId, this.token);
+        }
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
 
-  async loadDashboardData() {
+  async loadDashboardData(siteId: string, token: string) {
     // ✅ Fix TS7006: Add explicit types (Metric[]) to data and (any) to error
     /*this.dashboardService.getDashboardMetrics().subscribe({
       next: (data: Metric[]) => this.metrics = data,
       error: (err: any) => console.error('Failed to load metrics', err)
     });*/
-
-    const { data } = await this.supabase.auth.getSession();
-    const token = data.session?.access_token;
-
-    if (!token) {
-      console.error('No session token');
-      return;
-    }
 
     this.loading = true; // Start loading
     // default = วันนี้
@@ -96,7 +118,7 @@ export class DashboardComponent implements OnInit {
         ? this.selectedDate.toISOString().slice(0, 10)
         : null
 
-    this.dashboardService.getAllActivities(date, token)
+    this.dashboardService.getAllActivities(date, siteId, token)
       .pipe(
         finalize(() => this.loading = false)
       )
@@ -105,23 +127,57 @@ export class DashboardComponent implements OnInit {
           this.metrics = res.metrics;
           this.allActivities = res.activities.map((a: any) => {
 
-            // ===== parse changes =====
-            let parsedChanges: any[] = [];
+            // ===== parse revision snapshot =====
+            let revisionRows: any[] = [];
+            let parsedOld: any = null;
+            let parsedNew: any = null;
 
-            if (a.log_type === 'revision' && a.changes) {
+            if (a.log_type === 'revision') {
               try {
-                const changesObj = typeof a.changes === 'string'
-                  ? JSON.parse(a.changes)
-                  : a.changes;
+                parsedOld = a.old_data
+                  ? (typeof a.old_data === 'string' ? JSON.parse(a.old_data) : a.old_data)
+                  : null;
 
-                parsedChanges = Object.keys(changesObj).map(key => ({
-                  field: key,
-                  old: changesObj[key]?.old,
-                  new: changesObj[key]?.new
-                }));
+                parsedNew = a.new_data
+                  ? (typeof a.new_data === 'string' ? JSON.parse(a.new_data) : a.new_data)
+                  : null;
+
+                // ✅ ถ้ามี snapshot เต็ม
+                if (parsedOld && parsedNew) {
+                  const allKeys = new Set([
+                    ...Object.keys(parsedOld),
+                    ...Object.keys(parsedNew)
+                  ]);
+
+                  revisionRows = Array.from(allKeys).map(key => {
+                    const oldVal = parsedOld?.[key] ?? null;
+                    const newVal = parsedNew?.[key] ?? null;
+
+                    return {
+                      field: key,
+                      old: oldVal,
+                      new: newVal,
+                      changed: JSON.stringify(oldVal) !== JSON.stringify(newVal)
+                    };
+                  });
+                }
+
+                // ⚠ fallback ช่วงเปลี่ยนผ่าน (old/new ยัง null)
+                else if (a.changes) {
+                  const changesObj = typeof a.changes === 'string'
+                    ? JSON.parse(a.changes)
+                    : a.changes;
+
+                  revisionRows = Object.keys(changesObj).map(key => ({
+                    field: key,
+                    old: changesObj[key]?.old,
+                    new: changesObj[key]?.new,
+                    changed: true
+                  }));
+                }
+
               } catch (err) {
-                console.error('Invalid changes JSON:', a.changes);
-                parsedChanges = [];
+                console.error('Invalid revision JSON:', err);
               }
             }
 
@@ -154,15 +210,13 @@ export class DashboardComponent implements OnInit {
               entityType: a.entity_type,
 
               detail: a.detail,
-              changes: parsedChanges,
+              revisionRows,
               meta: parsedMeta
             };
           });
-          this.loading = false; // Stop loading
         },
         error: (err: any) => {
           console.error('Failed to load activities', err);
-          this.loading = false; // Stop loading
         }
       });
   }
@@ -174,6 +228,8 @@ export class DashboardComponent implements OnInit {
   get abnormalActivities() {
     return this.allActivities.filter(a => a.category === 'abnormal');
   }
+
+  
 
   viewUserHistory(userName: string) {
     this.currentUser = userName;
@@ -194,6 +250,12 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  onDateChange() {
+    const siteId = this.siteStateService.getCurrentSite();
+    if (this.token) {
+      this.loadDashboardData(siteId, this.token);
+    }
+  }
   getStatusSeverity(status: string): "success" | "info" | "warning" | "danger" | "secondary" | "contrast" | undefined {
     switch (status) {
       case 'success': return 'success';

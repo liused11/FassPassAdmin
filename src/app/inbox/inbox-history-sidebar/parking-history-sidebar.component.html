@@ -1,0 +1,62 @@
+<!-- parking-history-sidebar.component.html -->
+<p-sidebar
+  [(visible)]="visible"
+  position="right"
+  styleClass="parking-sidebar"
+  [modal]="true"
+  [baseZIndex]="10000"
+  [showCloseIcon]="false"
+  [dismissible]="false"
+  [closeOnEscape]="false"
+>
+
+  <!-- LOADING -->
+  <ng-container *ngIf="loading">
+    <div class="loading-wrapper">
+      <p-skeleton width="70%" height="24px" class="mb-4"></p-skeleton>
+      <p-skeleton width="100%" height="80px" class="mb-3"></p-skeleton>
+      <p-skeleton width="100%" height="80px"></p-skeleton>
+    </div>
+  </ng-container>
+
+  <!-- CONTENT -->
+  <div *ngIf="!loading" class="sidebar-content">
+
+    <!-- HEADER -->
+    <div class="sidebar-header">
+      <div class="title">ประวัติการแก้ไข</div>
+      <button pButton icon="pi pi-times" class="p-button-text" (click)="close()"></button>
+    </div>
+
+    <p-divider></p-divider>
+
+    <!-- NEW SECTION -->
+    <div class="section-title">ใหม่</div>
+
+    <div *ngFor="let item of history" class="history-card">
+
+      <div class="icon"
+           [ngClass]="{
+             'blue': item.color === 'blue',
+             'red': item.color === 'red'
+           }">
+        <i [class]="item.icon"></i>
+      </div>
+
+      <div class="content">
+        <div class="card-title">
+          {{ item.title }}
+        </div>
+        <div class="card-desc">
+          {{ item.description }}
+        </div>
+        <div class="card-time">
+          {{ item.time }}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</p-sidebar>

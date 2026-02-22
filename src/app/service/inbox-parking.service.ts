@@ -22,9 +22,9 @@ export class ParkingService {
     });
   }
 
-  getDashboard(token: string): Observable<any> {
+  getDashboard(token: string, siteId: string): Observable<any> {
     return this.http.get(
-      `${this.baseUrl}/get-dashboard-parking`, 
+      `${this.baseUrl}/get-dashboard-parking?site_id=${siteId}`, 
       { headers: this.getHeaders(token) }
     );
   }

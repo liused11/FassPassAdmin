@@ -155,19 +155,39 @@
                 styleClass="p-0 text-blue-500 text-xs"
                 (click)="openEdit(building)">  <!-- ✅ ADD THIS -->
               </p-button>
-              <p-button label="ปิด" [link]="true" size="small" styleClass="p-0 text-blue-400 text-xs"></p-button>
-              <p-button label="ลบ" [link]="true" size="small" styleClass="p-0 text-blue-400 text-xs"></p-button>
-              <p-button label="ดูประวัติ" [link]="true" size="small" styleClass="p-0 text-blue-300 text-xs"></p-button>
+              <p-button label="ปิด" 
+                [link]="true" 
+                size="small" 
+                styleClass="p-0 text-blue-400 text-xs"
+                >
+              </p-button>
+              <p-button label="ลบ" 
+                [link]="true" 
+                size="small" 
+                styleClass="p-0 text-blue-400 text-xs">
+              </p-button>
+              <p-button 
+                label="ดูประวัติ" 
+                [link]="true" 
+                size="small" 
+                styleClass="p-0 text-blue-300 text-xs"
+                (click)="openHistory(building)">
+              </p-button>
             </div>
           </td>
         </tr>
       </ng-template>
     </p-table>
     <app-parking-edit-sidebar
-      [(visible)]="sidebarVisible"
+      [(visible)]="sidebarEditVisible"
       [data]="selectedBuilding"
       [loading]="loading" 
       (save)="handleSave($event)">
     </app-parking-edit-sidebar>
+    <app-parking-history-sidebar
+      [(visible)]="sidebarHistoryVisible"
+      [history]="historyList"
+      [loading]="loading">
+    </app-parking-history-sidebar>
   </div>
 </div>

@@ -1,3 +1,4 @@
+// app.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -14,7 +15,9 @@ import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
 import { OverlayPanelModule } from 'primeng/overlaypanel'; // ✅ 1. Import OverlayPanel
 import { PrimeNG } from 'primeng/config';
-
+import { SiteStateService } from './service/site/site-state.service';
+import { SiteApiService } from './service/site/site-api.service';
+import { createClient } from '@supabase/supabase-js';
 // Services
 import { ModalService } from './service/modal.service';
 import { filter } from 'rxjs/operators';
@@ -44,8 +47,6 @@ export class AppComponent implements OnInit, OnDestroy {
   activeRoute: string = '';
   sidebarVisible: boolean = false;
 
-  selectedSite: string = 'all';
-
   siteOptions: any[] = [
     { label: 'All Sites (ภาพรวม)', value: 'all' },
     { label: 'KMITL', value: 'kmitl' },
@@ -57,10 +58,17 @@ export class AppComponent implements OnInit, OnDestroy {
   topMenu: any[] = [];
   bottomMenu: any[] = [];
 
+  supabase = createClient(
+    'https://unxcjdypaxxztywplqdv.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
+  );
+
   constructor(
     public router: Router,
     private modalService: ModalService,
-    private primeng: PrimeNG
+    private primeng: PrimeNG,
+    private siteStateService: SiteStateService,  // 👈 เพิ่ม
+    private siteApi: SiteApiService 
   ) {
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
@@ -70,8 +78,53 @@ export class AppComponent implements OnInit, OnDestroy {
       });
   }
 
-  ngOnInit() {
+  get selectedSite(): string {
+    return this.siteStateService.getCurrentSite();
+  }
+
+  set selectedSite(value: string) {
+    this.siteStateService.setSite(value);
+  }
+
+  async ngOnInit() {
+    this.siteStateService.init();
     this.primeng.ripple.set(true);
+    // 🔐 เช็คก่อนว่ามี session อยู่ไหม
+    let { data } = await this.supabase.auth.getSession();
+
+    if (!data.session) {
+      // ถ้าไม่มีค่อย login
+      const { error } = await this.supabase.auth.signInWithPassword({
+        email: 'test@test.com',
+        password: '12345678'
+      });
+
+      if (error) {
+        console.error('Login failed:', error.message);
+        return;
+      }
+
+      const sessionResult = await this.supabase.auth.getSession();
+      data = sessionResult.data;
+    }
+    const token = data.session?.access_token;
+
+    if (token) {
+      this.siteApi.getSites(token).subscribe(res => {
+        this.siteOptions = [
+          { label: 'All Sites (ภาพรวม)', value: 'all' },
+          ...res.sites.map((s: any) => ({
+            label: s.name,
+            value: String(s.id)   // ⭐ สำคัญ
+          }))
+        ];
+      });
+    }
+
+    this.bottomMenu = [
+      { label: 'Settings', icon: 'pi pi-cog', route: '/fp' },
+      { label: 'Help', icon: 'pi pi-question-circle', route: '/help' }
+    ];
 
     this.topMenu = [
       { label: 'หน้าหลัก', icon: 'pi pi-home', route: '/dashboard' },
@@ -82,11 +135,6 @@ export class AppComponent implements OnInit, OnDestroy {
       // { label: 'Video', icon: 'pi pi-video', route: '/video' },
       { label: 'จัดการลานจอดรถ', icon: 'pi pi-car', route: '/parking' },
       // { label: 'จัดการโซน', icon: 'pi pi-map', route: '/zones' }
-    ];
-
-    this.bottomMenu = [
-      { label: 'Settings', icon: 'pi pi-cog', route: '/fp' },
-      { label: 'Help', icon: 'pi pi-question-circle', route: '/help' }
     ];
 
     this.modalService.initListener();

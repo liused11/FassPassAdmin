@@ -20,6 +20,13 @@ export interface Meta {
   verification?: string;
 }
 
+export interface RevisionRow {
+  field: string;
+  old: any;
+  new: any;
+  changed: boolean;
+}
+
 export interface ActivityLog {
   id: number;
   logType: 'revision' | 'activity';
@@ -31,7 +38,7 @@ export interface ActivityLog {
   status: 'success' | 'warning' | 'denied' | 'error';
   entityId?: string;
   detail?: string;
-  changes?: Change[] | null;
+  revisionRows?: RevisionRow[] | null;
   meta?: Meta | null;
 }
 

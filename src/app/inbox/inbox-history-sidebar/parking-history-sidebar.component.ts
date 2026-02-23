@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ParkingHistoryItem } from '../../models/parking-history-sidebar.model';
+import { SlotManagerComponent } from '../inbox-slot-manager/slot-manager.component';
 
 @Component({
   selector: 'app-parking-history-sidebar',
@@ -15,7 +16,8 @@ import { ParkingHistoryItem } from '../../models/parking-history-sidebar.model';
     SidebarModule,
     ButtonModule,
     DividerModule,
-    SkeletonModule
+    SkeletonModule,
+    SlotManagerComponent
   ],
   templateUrl: './parking-history-sidebar.component.html',
   styleUrls: ['./parking-history-sidebar.component.css']

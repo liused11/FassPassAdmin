@@ -1,0 +1,103 @@
+<!-- slot-manager.component.html -->
+<div class="layout">
+
+  <!-- LEFT FLOOR LIST -->
+  <div class="floor-list">
+    <div
+    *ngFor="let floor of floors"
+    class="floor-item"
+    [class.active]="floor === selectedFloor"
+    (click)="selectFloor(floor)"
+    >
+      <div>ชั้น {{ floor.floor }}</div>
+      <small>{{ getFloorSlotCount(floor) }} ช่อง</small>
+    </div>
+  </div>
+
+  <!-- RIGHT ZONE GRID -->
+  <div class="zone-area">
+
+    <div class="zone-header">
+
+        <div class="header-left">
+            <div class="section-title">
+            ตำแหน่งและสถานะการใช้งาน
+            </div>
+        </div>
+
+        <div class="header-right">
+            <input
+            pInputText
+            type="text"
+            placeholder="ค้นหาช่องจอด..."
+            [(ngModel)]="searchText"
+            />
+
+            <button
+            pButton
+            label="แก้ไขสถานะ"
+            icon="pi pi-pencil"
+            [disabled]="selectedSlots.length === 0"
+            (click)="openDialog()">
+            </button>
+        </div>
+
+        </div>
+
+    <div *ngFor="let zone of filteredZones" class="zone">
+      <div class="zone-title">โซน {{ zone.name }}</div>
+
+      <div class="grid">
+        <div
+          *ngFor="let slot of zone.slots"
+          class="slot"
+          [ngClass]="{
+            'available': slot.status === 'available',
+            'occupied': slot.status === 'occupied',
+            'maintenance': slot.status === 'maintenance',
+            'selected': slot.selected
+            }"
+          (click)="toggleSlot(slot)"
+        >
+          <div class="slot-id">
+              {{ slot.name }}
+          </div>
+
+          <div class="slot-status">
+              {{ getStatusLabel(slot.status) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DIALOG -->
+<p-dialog
+  header="แก้ไขสถานะช่องจอด"
+  [(visible)]="showDialog"
+  [modal]="true"
+  [closable]="!isUpdating"
+  [style]="{ width: '400px' }">
+
+  <div class="dialog-body">
+    <p>เลือกสถานะสำหรับ {{ selectedSlots.length }} ช่อง</p>
+
+    <button
+      pButton
+      label="เปิดใช้งาน"
+      [disabled]="isUpdating"
+      (click)="updateStatus('available')">
+    </button>
+
+    <button
+      pButton
+      label="ส่งซ่อม / ปิดปรับปรุง"
+      severity="danger"
+      [disabled]="isUpdating"
+      (click)="updateStatus('maintenance')">
+    </button>
+  </div>
+
+</p-dialog>

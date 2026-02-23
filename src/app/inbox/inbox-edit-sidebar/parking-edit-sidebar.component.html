@@ -6,7 +6,9 @@
   [modal]="true"
   [baseZIndex]="10000"
   [showCloseIcon]="false"
-  [dismissible]="false">
+  [dismissible]="false"
+  [blockScroll]="true"
+  >
   
 
   <!-- LOADING -->
@@ -22,108 +24,126 @@
   <!-- FORM -->
   <form *ngIf="!loading && data"
         [formGroup]="form"
-        class="sidebar-content">
+        class="sidebar-content split-layout">
+    
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <!-- HEADER -->
+      <div class="sidebar-header">
 
-    <!-- HEADER -->
-    <div class="sidebar-header">
-      <div class="title">แก้ไขสถานที่จอดรถ</div>
+        <div class="header-left">
+          <div class="title">
+            แก้ไขสถานที่จอดรถ
+          </div>
+        </div>
 
-        <div class="flex flex-column gap-2">
+        <div class="header-right">
+          <div class="status-group">
             <span>สถานะการใช้งาน</span>
-            <div class="flex justify-content-center">
-                <p-inputSwitch formControlName="isActive"></p-inputSwitch>
-            </div>
+            <p-inputSwitch formControlName="isActive"></p-inputSwitch>
+          </div>
         </div>
-    </div>
 
-    <!-- ข้อมูลทั่วไป -->
-    <div class="section">
-      <div class="section-title blue">
-        <i class="pi pi-info-circle"></i>
-        ข้อมูลทั่วไป
       </div>
 
-      <div class="map-box">
-        <i class="pi pi-map-marker"></i>
-        <div>เพิ่มรูปสถานที่ของคุณ</div>
-      </div>
+      <!-- ข้อมูลทั่วไป -->
+      <div class="section">
+        <div class="section-title blue">
+          <i class="pi pi-info-circle"></i>
+          ข้อมูลทั่วไป
+        </div>
 
-      <div class="field">
-        <label>ชื่อสถานที่</label>
-        <input pInputText formControlName="name" />
-      </div>
-
-      <div class="field">
-        <label>ที่อยู่แบบเต็ม</label>
-        <textarea pInputTextarea
-                  rows="3"
-                  formControlName="address"></textarea>
-      </div>
-    </div>
-
-    <!-- เวลา -->
-    <div class="section">
-      <div class="section-title blue">
-        <i class="pi pi-clock"></i>
-        เวลาทำการและสถานะ
-      </div>
-
-      <div class="two-col">
-        <div class="field">
-          <label>เวลาเปิดทำการ</label>
-          <p-dropdown
-            [options]="timeOptions"
-            formControlName="openTime"
-            appendTo="body">
-          </p-dropdown>
+        <div class="map-box">
+          <i class="pi pi-map-marker"></i>
+          <div>เพิ่มรูปสถานที่ของคุณ</div>
         </div>
 
         <div class="field">
-          <label>เวลาปิดทำการ</label>
-          <p-dropdown
-            [options]="timeOptions"
-            formControlName="closeTime">
-          </p-dropdown>
+          <label>ชื่อสถานที่</label>
+          <input pInputText formControlName="name" />
         </div>
-      </div>
-    </div>
 
-    <!-- ความจุ -->
-    <div class="section">
-      <div class="section-title blue">
-        <i class="pi pi-wallet"></i>
-        การตั้งค่าราคา
-      </div>
-
-      <div class="two-col">
         <div class="field">
-          <label>ความจุรวม</label>
-          <p-inputNumber 
-            formControlName="hourlyRate"
-            mode="currency"
-            currency="THB"
-            locale="th-TH">
-          </p-inputNumber>
+          <label>ที่อยู่แบบเต็ม</label>
+          <textarea pInputTextarea
+                    rows="3"
+                    formControlName="address"></textarea>
         </div>
       </div>
+
+      <!-- เวลา -->
+      <div class="section">
+        <div class="section-title blue">
+          <i class="pi pi-clock"></i>
+          เวลาทำการและสถานะ
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label>เวลาเปิดทำการ</label>
+            <p-dropdown
+              [options]="timeOptions"
+              formControlName="openTime"
+              appendTo="body">
+            </p-dropdown>
+          </div>
+
+          <div class="field">
+            <label>เวลาปิดทำการ</label>
+            <p-dropdown
+              [options]="timeOptions"
+              formControlName="closeTime">
+            </p-dropdown>
+          </div>
+        </div>
+      </div>
+
+      <!-- ความจุ -->
+      <div class="section">
+        <div class="section-title blue">
+          <i class="pi pi-wallet"></i>
+          การตั้งค่าราคา
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label>ความจุรวม</label>
+            <p-inputNumber 
+              formControlName="hourlyRate"
+              mode="currency"
+              currency="THB"
+              locale="th-TH">
+            </p-inputNumber>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="sidebar-footer">
+        <button pButton
+                type="button"
+                label="ยกเลิก"
+                class="cancel-btn"
+                (click)="close()">
+        </button>
+
+        <button pButton
+                type="button"
+                label="บันทึกการเปลี่ยนแปลง"
+                class="save-btn"
+                (click)="onSave()">
+        </button>
+      </div>
+    </div>
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <app-slot-manager
+        [buildingId]="data?.id"
+        [visible]="visible"
+        [token]="token">
+      </app-slot-manager>
     </div>
 
-    <!-- FOOTER -->
-    <div class="sidebar-footer">
-      <button pButton
-              type="button"
-              label="ยกเลิก"
-              class="cancel-btn"
-              (click)="close()">
-      </button>
-
-      <button pButton
-              type="button"
-              label="บันทึกการเปลี่ยนแปลง"
-              class="save-btn"
-              (click)="onSave()">
-      </button>
-    </div>
 
   </form>
 </p-sidebar>

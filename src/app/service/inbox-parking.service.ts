@@ -52,4 +52,10 @@ export class ParkingService {
       }
     );
   }
+  getBuildingSlots(buildingId: string, token: string) {
+    return this.http.get<any>(
+      `${this.baseUrl}/get-building-slots?building_id=${buildingId}`,
+      { headers: this.getHeaders(token) }
+    );
+  }
 }

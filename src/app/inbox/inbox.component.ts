@@ -69,6 +69,7 @@
     selectedBuilding: any = null;          // ✅ ADD
 
     historyList: ParkingHistoryItem[] = [];
+    sessionToken: string = '';
     
 
     constructor(
@@ -89,6 +90,8 @@
         console.error('No session');
         return;
       }
+
+      this.sessionToken = token; // ✅ เก็บไว้
 
       
       // subscribe site

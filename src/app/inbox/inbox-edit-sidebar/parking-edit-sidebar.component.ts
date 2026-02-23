@@ -17,6 +17,8 @@ import { InputSwitchModule } from 'primeng/inputswitch';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DrawerModule } from 'primeng/drawer';
 import { ParkingEditSidebarModel } from '../../models/parking-edit-sidebar.model';
+import { SlotManagerComponent } from '../inbox-slot-manager/slot-manager.component';
+
 @Component({
   selector: 'app-parking-edit-sidebar',
   standalone: true,
@@ -35,7 +37,8 @@ import { ParkingEditSidebarModel } from '../../models/parking-edit-sidebar.model
     SelectButtonModule,
     InputSwitchModule,
     CheckboxModule,
-    DrawerModule
+    DrawerModule,
+    SlotManagerComponent
   ],
   templateUrl: './parking-edit-sidebar.component.html',
   styleUrls: ['./parking-edit-sidebar.component.css']
@@ -47,6 +50,7 @@ export class ParkingEditSidebarComponent implements OnChanges {
   @Input() loading: boolean = false;
   @Output() visibleChange = new EventEmitter<boolean>();
   @Output() save = new EventEmitter<any>();
+  @Input() token!: string;
 
   form!: FormGroup;
 
@@ -77,9 +81,19 @@ export class ParkingEditSidebarComponent implements OnChanges {
     if (changes['data'] && this.data && this.visible) {
       console.log(this.data); // 👈 ดูก่อน
       const data = this.data;
-      this.form.reset();  
+      this.form.reset({
+        id: null,
+        name: '',
+        address: '',
+        imageUrl: [],
+        isActive: false,   // 👈 ใส่ default boolean ชัด ๆ
+        openTime: '',
+        closeTime: '',
+        hourlyRate: 0
+      });
       this.form.patchValue({
         ...data,
+        isActive: !!data.isActive,  // 👈 บังคับ boolean
         openTime: data.openTime?.slice(0, 5),
         closeTime: data.closeTime?.slice(0, 5),
       });

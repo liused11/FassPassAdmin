@@ -182,6 +182,7 @@
       [(visible)]="sidebarEditVisible"
       [data]="selectedBuilding"
       [loading]="loading" 
+      [token]="sessionToken"
       (save)="handleSave($event)">
     </app-parking-edit-sidebar>
     <app-parking-history-sidebar

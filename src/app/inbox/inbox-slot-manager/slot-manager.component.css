@@ -1,0 +1,148 @@
+/* SECTION TITLE */
+
+.layout {
+  display: flex;
+  gap: 24px;
+}
+
+.zone-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* FLOOR LIST */
+.floor-list {
+  width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.floor-item {
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid #e4e7ec;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.floor-item small {
+  font-size: 12px;
+  color: #667085;
+}
+
+.floor-item.active {
+  background: #eaf1ff;
+  border-color: #155eef;
+  color: #155eef;
+}
+
+/* ZONE AREA */
+.zone-area {
+  flex: 1;
+}
+
+.zone {
+  margin-bottom: 32px;
+}
+
+.zone-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+}
+
+/* SLOT CARD */
+.slot {
+  height: 70px;
+  border-radius: 12px;
+  border: 2px solid #d0d5dd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  background: white;
+}
+
+/* ID เป็นสีดำเสมอ */
+.slot-id {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* STATUS ตัวเล็กลง */
+.slot-status {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 🔵 available */
+.slot.available {
+  border-color: #155eef;
+}
+
+.slot.available .slot-status {
+  color: #155eef;
+}
+
+/* 🟡 occupied */
+.slot.occupied {
+  border-color: #b54708;
+  cursor: not-allowed;
+}
+
+.slot.occupied .slot-status {
+  color: #b54708;
+}
+
+/* 🟣 reserved */
+.slot.reserved {
+  border-color: #7a5af8;
+  cursor: not-allowed;
+}
+
+.slot.reserved .slot-status {
+  color: #7a5af8;
+}
+
+/* 🔴 maintenance */
+.slot.maintenance {
+  border-color: #b42318;
+}
+
+.slot.maintenance .slot-status {
+  color: #b42318;
+}
+
+/* SELECTED */
+.slot.selected {
+  box-shadow: 0 0 0 3px rgba(21, 94, 239, 0.2);
+}
+
+.slot:hover {
+  transform: translateY(-2px);
+  transition: 0.15s ease;
+}

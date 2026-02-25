@@ -1,318 +1,340 @@
-  // app/inbox/inbox.component.ts
-  import { ParkingEditSidebarComponent } from './inbox-edit-sidebar/parking-edit-sidebar.component';
-  import { ParkingHistorySidebarComponent } from './inbox-history-sidebar/parking-history-sidebar.component';
-  import { Component, OnInit } from '@angular/core';
-  import { CommonModule } from '@angular/common';
-  import { RouterOutlet } from '@angular/router';
-  import { FormsModule } from '@angular/forms';
+// app/inbox/inbox.component.ts
+import { ParkingEditSidebarComponent } from './inbox-edit-sidebar/parking-edit-sidebar.component';
+import { ParkingHistorySidebarComponent } from './inbox-history-sidebar/parking-history-sidebar.component';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
-  // PrimeNG imports
-  import { TableModule } from 'primeng/table';
-  import { ButtonModule } from 'primeng/button';
-  import { InputTextModule } from 'primeng/inputtext';
-  import { TagModule } from 'primeng/tag';
-  import { CheckboxModule } from 'primeng/checkbox';
-  import { CardModule } from 'primeng/card';
-  import { DropdownModule } from 'primeng/dropdown';
-  import { IconFieldModule } from 'primeng/iconfield';
-  import { InputIconModule } from 'primeng/inputicon';
-  import { ParkingService } from '../service/inbox-parking.service';
-  import { createClient } from '@supabase/supabase-js';
-  import { HttpClientModule } from '@angular/common/http';
-  import { ProgressSpinnerModule } from 'primeng/progressspinner';
-  import { ParkingHistoryItem } from '../models/parking-history-sidebar.model';
-  import { SiteStateService } from '../service/site/site-state.service';
-  import { Subject } from 'rxjs';
-  import { takeUntil } from 'rxjs/operators';
-  
-  @Component({
-    selector: 'app-inbox',
-    standalone: true,
-    imports: [
-      CommonModule,
-      FormsModule,
-      TableModule,
-      ButtonModule,
-      InputTextModule,
-      TagModule,
-      CheckboxModule,
-      CardModule,
-      ParkingEditSidebarComponent,
-      ParkingHistorySidebarComponent,
-      DropdownModule,
-      IconFieldModule,
-      InputIconModule,
-      HttpClientModule,
-      RouterOutlet,
-      ProgressSpinnerModule
-    ],
-    templateUrl: './inbox.component.html',
-    styleUrls: ['./inbox.component.css']
-  })
-  export class InboxComponent implements OnInit {
+// PrimeNG imports
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { TagModule } from 'primeng/tag';    
+import { CheckboxModule } from 'primeng/checkbox';    
+import { CardModule } from 'primeng/card';
+import { DropdownModule } from 'primeng/dropdown';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { ParkingService } from '../service/inbox-parking.service';
+import { createClient } from '@supabase/supabase-js';
+import { HttpClientModule } from '@angular/common/http';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { ParkingHistoryItem } from '../models/parking-history.model';
+import { SiteStateService } from '../service/site/site-state.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
     
-
-    supabase = createClient(
-      'https://unxcjdypaxxztywplqdv.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
-    );
-    
-    originalBuilding: any = null;
-    metrics: any[] = [];
-    buildings: any[] = [];
-
-    selectedBuildings: any[] = [];
-    loading: boolean = false;
-    
-    sidebarEditVisible: boolean = false;       // ✅ ADD
-    sidebarHistoryVisible: boolean = false;
-    selectedBuilding: any = null;          // ✅ ADD
-
-    historyList: ParkingHistoryItem[] = [];
-    sessionToken: string = '';
-    
-
-    constructor(
-      private parkingService: ParkingService,
-      private siteState: SiteStateService
-    ) { }
-
-    private refreshInterval: any;
-    private currentSiteId: string = 'all';
-    private destroy$ = new Subject<void>();
-
-    async ngOnInit() {
-      this.loading = true; // Start loading
-      const { data } = await this.supabase.auth.getSession();
-      const token = data.session?.access_token;
-
-      if (!token) {
-        console.error('No session');
-        return;
-      }
-
-      this.sessionToken = token; // ✅ เก็บไว้
-
-      
-      // subscribe site
-      this.siteState.site$
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(site => {
-          this.currentSiteId = site;
-          this.loadDashboard(token, site);
-        });
-
-      // auto refresh
-      this.refreshInterval = setInterval(() => {
-        this.loadDashboard(token, this.currentSiteId);
-      }, 10000);
-    }
-
-    ngOnDestroy() {
-      this.destroy$.next();
-      this.destroy$.complete();
-      if (this.refreshInterval) {
-        clearInterval(this.refreshInterval);
-      }
-    }
-
-
-    async loadDashboard(token: string, siteId: string) {
-
-      this.parkingService.getDashboard(token, siteId)
-        .subscribe(res => {
-          console.log(res);
-
-          this.metrics = res.metrics ?? [];
-
-          const summary = res.parking_summary ?? [];
-
-          this.buildings = summary.map((b: any) => ({
-            id: b.id,
-            name: b.name,
-            available: b.total - b.used,
-            total: b.total,
-            types: b.types ?? [],  // ประเภท
-            detail: `เวลาเปิด-ปิด: ${b.open_time} - ${b.close_time}`,
-            address: b.address,
-            status: b.status,
-            price: b.price,
-            rate: b.rate,
-            openTime: b.open_time,
-            closeTime: b.close_time
-          }));
-          this.loading = false; // Stop loading
-        }, err => {
-          console.error(err);
-          this.loading = false;
-        });
-    }
-
-    async openEdit(building: any) { 
-
-      this.sidebarEditVisible = true;
-      this.loading = true;
-      this.selectedBuilding = null;
-
-      const {data: { session }} = await this.supabase.auth.getSession();
-
-      const token = session?.access_token;
+@Component({
+  selector: 'app-inbox',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    TableModule,
+    ButtonModule,
+    InputTextModule,
+    TagModule,
+    CheckboxModule,
+    CardModule,
+    ParkingEditSidebarComponent,
+    ParkingHistorySidebarComponent,
+    DropdownModule,
+    IconFieldModule,
+    InputIconModule,
+    HttpClientModule,
+    RouterOutlet,
+    ProgressSpinnerModule
+  ],
+  templateUrl: './inbox.component.html',
+  styleUrls: ['./inbox.component.css']
+})
+export class InboxComponent implements OnInit {
       
 
-      this.parkingService
-        .getBuildingById(building.id, token!)
-        .subscribe({
-          next: (res: any) => { 
-            this.selectedBuilding = res.data; 
-            this.originalBuilding = JSON.parse(JSON.stringify(res.data)); // clone กัน reference
-            this.loading = false; 
-          },
-          error: (err) => { 
-              console.error('Error fetching building:', err); 
-              this.loading = false; 
-          }    
-        }); 
-    }
+  supabase = createClient(
+    'https://unxcjdypaxxztywplqdv.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
+  );
+  sessionToken: string = '';
+  originalBuilding: any = null;
+  metrics: any[] = [];
+  buildings: any[] = [];
 
-    openHistory(building: any) {
-      this.selectedBuilding = building;
-      this.sidebarHistoryVisible = true;
-
-      // 🔹 โหลด history ของ building นั้น
-      this.loadHistory(building.id);
-    }
-    loadHistory(buildingId: string) {
-      this.loading = true;
-
-      const mockData: Record<string, ParkingHistoryItem[]> = {
-        '1': [
-          {
-            type: 'status',
-            title: 'แก้ไขสถานะ',
-            description: 'เปลี่ยนเป็น เปิดใช้งาน',
-            time: '5 นาทีที่แล้ว',
-            icon: 'pi pi-car',
-            color: 'blue'
-          }
-        ],
-        '2': [
-          {
-            type: 'rate',
-            title: 'เปลี่ยนราคา',
-            description: 'จาก ฿20 เป็น ฿30',
-            time: '10 นาทีที่แล้ว',
-            icon: 'pi pi-money-bill',
-            color: 'red'
-          }
-        ]
-      };
-
-      this.historyList = mockData[buildingId] ?? [];
-
-      this.loading = false;
-    }
-
-    private addEntityIfChanged(
-      entities: any[],
-      entityType: string,
-      entityId: string,
-      original: any,
-      edited: any
-    ) {
-      const changes = this.getChangedFields(original, edited);
-
-      if (Object.keys(changes).length > 0) {
-        entities.push({
-          entity_type: entityType,
-          entity_id: entityId,
-          updates: changes
-        });
-      }
-    }
-
-    async handleSave(formData: any) {
-
-      const { data: { session } } = await this.supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token|| !this.originalBuilding) return;
-
-      // 🔹 map form -> db column
-      const editedBuilding  = {
-        name: formData.name,
-        address: formData.address,
-        open_time: formData.openTime,
-        close_time: formData.closeTime,
-        price_value: formData.hourlyRate,
-        is_active: formData.isActive,
-      };
-
-      const originalBuilding = {
-        name: this.originalBuilding.name,
-        address: this.originalBuilding.address,
-        open_time: this.originalBuilding.openTime,
-        close_time: this.originalBuilding.closeTime,
-        price_value: this.originalBuilding.hourlyRate,
-        is_active: this.originalBuilding.isActive,
-      };
+  selectedBuildings: any[] = [];
+  loading: boolean = false;
       
-      const entities: any[] = [];
+  sidebarEditVisible: boolean = false;       // ✅ ADD
+  sidebarHistoryVisible: boolean = false;
+  selectedBuilding: any = null;          // ✅ ADD
 
-      this.addEntityIfChanged(
-        entities,
-        'buildings',
-        formData.id,
-        originalBuilding,
-        editedBuilding
-      );
+  historyList: ParkingHistoryItem[] = [];
+  historyOffset = 0;
+  historyLimit = 5;
+      
 
-      // 🔥 ถ้าไม่มีอะไรเปลี่ยน ไม่ต้องยิง API
-      if (entities.length === 0) {
-        this.sidebarEditVisible = false;
-        return;
-      }
+  constructor(
+    private parkingService: ParkingService,
+    private siteState: SiteStateService
+  ) { }
 
-
-      this.parkingService
-        .updateEntities(entities, token)
-        .subscribe({
-          next: () => {
-            this.sidebarEditVisible = false;
-            this.loadDashboard(token, this.currentSiteId);
-          },
-          error: (err) => {
-            console.error('Update failed:', err);
-            console.error(err.error);   // 👈 เพิ่มบรรทัดนี้
-          }
-        });
+  private refreshInterval: any;
+  private currentSiteId: string = 'all';
+  private destroy$ = new Subject<void>();
+  async ngOnInit() {
+    this.loading = true; // Start loading
+    const { data } = await this.supabase.auth.getSession();
+    const token = data.session?.access_token
+    if (!token) {
+      console.error('No session');
+      return;
     }
-    getChangedFields(original: any, edited: any) {
-      const changes: any = {};
 
-      Object.keys(edited).forEach(key => {
+    this.sessionToken = token; // ✅ เก็บไว
         
-        const originalValue = original[key];
-        const editedValue = edited[key];
-
-        // compare array
-        if (Array.isArray(originalValue) && Array.isArray(editedValue)) {
-          if (JSON.stringify(originalValue.sort()) !== JSON.stringify(editedValue.sort())) {
-            changes[key] = editedValue;
-          }
-          return;
-        }
-        if (edited[key] !== original[key]) {
-          changes[key] = edited[key];
-        }
+    // subscribe site
+    this.siteState.site$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(site => {
+        this.currentSiteId = site;
+        this.loadDashboard(token, site);
       });
 
-      return changes;
-    }
-    getSeverity(status: string) {
-      switch (status) {
-        case 'ใช้งานอยู่': return 'success';
-        case 'เต็ม': return 'danger';
-        case 'ไม่มีข้อมูล': return 'secondary';
-        default: return 'info';
-      }
+    // auto refresh
+    this.refreshInterval = setInterval(() => {
+      this.loadDashboard(token, this.currentSiteId);
+    }, 10000);
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
     }
   }
+
+
+  async loadDashboard(token: string, siteId: string) {
+
+    this.parkingService.getDashboard(token, siteId)
+      .subscribe(res => {
+        console.log(res);
+
+        this.metrics = res.metrics ?? [];
+
+        const summary = res.parking_summary ?? [];
+
+        this.buildings = summary.map((b: any) => ({
+          id: b.id,
+          name: b.name,
+          available: b.total - b.used,
+          total: b.total,
+          types: b.types ?? [],  // ประเภท
+          detail: `เวลาเปิด-ปิด: ${b.open_time} - ${b.close_time}`,
+          address: b.address,
+          status: b.status,
+          price: b.price,
+          rate: b.rate,
+          openTime: b.open_time,
+          closeTime: b.close_time
+        }));
+        this.loading = false; // Stop loading
+      }, err => {
+        console.error(err);
+        this.loading = false;
+      });
+  }
+
+  async openEdit(building: any) { 
+
+    this.sidebarEditVisible = true;
+    this.loading = true;
+    this.selectedBuilding = null;
+
+    const {data: { session }} = await this.supabase.auth.getSession();
+
+    const token = session?.access_token;
+        
+
+    this.parkingService
+      .getBuildingById(building.id, token!)
+      .subscribe({
+        next: (res: any) => { 
+          this.selectedBuilding = res.data; 
+          this.originalBuilding = JSON.parse(JSON.stringify(res.data)); // clone กัน reference
+          this.loading = false; 
+        },
+        error: (err) => { 
+            console.error('Error fetching building:', err); 
+            this.loading = false; 
+        }    
+      }); 
+  }
+
+  openHistory(building: any) {
+    this.selectedBuilding = building;
+    this.sidebarHistoryVisible = true;
+
+    this.historyOffset = 0;
+    this.historyLimit = 5;
+    this.historyList = [];
+
+    this.loadHistory();
+  }
+  loadHistory(loadMore = false) {
+
+    if (!this.selectedBuilding) return;
+
+    this.loading = true;
+
+    if (loadMore) {
+      this.historyLimit = 10;
+    } else {
+      this.historyLimit = 5;
+      this.historyOffset = 0;
+    }
+
+    this.parkingService
+      .getBuildingHistory(
+        this.selectedBuilding.id,
+        this.historyLimit,
+        this.historyOffset,
+        this.sessionToken
+      )
+      .subscribe({
+        next: (res) => {
+
+          const mapped = res.data.map((item: any) => ({
+            id: item.id,
+            logType: item.log_type,
+            entityType: item.entity_type,
+            entityId: item.entity_id,
+            field: item.field,
+            oldValue: item.old_value,
+            newValue: item.new_value,
+            action: item.action,
+            updatedBy: item.user_name,
+            updatedAt: item.created_at
+          }));
+
+          if (loadMore) {
+            this.historyList = [...this.historyList, ...mapped];
+            this.historyOffset += 10;
+          } else {
+            this.historyList = mapped;
+            this.historyOffset = 5;
+          }
+
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error(err);
+          this.loading = false;
+        }
+      });
+  }
+
+  private addEntityIfChanged(
+    entities: any[],
+    entityType: string,
+    entityId: string,
+    original: any,
+    edited: any
+  ) {
+    const changes = this.getChangedFields(original, edited)
+    if (Object.keys(changes).length > 0) {
+      entities.push({
+        entity_type: entityType,
+        entity_id: entityId,
+        updates: changes
+      });
+    }
+  }
+
+  async handleSave(formData: any) {
+
+    const { data: { session } } = await this.supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token|| !this.originalBuilding) return;
+
+    // 🔹 map form -> db column
+    const editedBuilding  = {
+      name: formData.name,
+      address: formData.address,
+      open_time: formData.openTime,
+      close_time: formData.closeTime,
+      price_value: formData.hourlyRate,
+      is_active: formData.isActive,
+    };
+
+    const originalBuilding = {
+      name: this.originalBuilding.name,
+      address: this.originalBuilding.address,
+      open_time: this.originalBuilding.openTime,
+      close_time: this.originalBuilding.closeTime,
+      price_value: this.originalBuilding.hourlyRate,
+      is_active: this.originalBuilding.isActive,
+    };
+        
+    const entities: any[] = [];
+
+    this.addEntityIfChanged(
+      entities,
+      'buildings',
+      formData.id,
+      originalBuilding,
+      editedBuilding
+    );
+
+    // 🔥 ถ้าไม่มีอะไรเปลี่ยน ไม่ต้องยิง API
+    if (entities.length === 0) {
+      this.sidebarEditVisible = false;
+      return;
+    }
+
+
+    this.parkingService
+      .updateEntities(entities, token)
+      .subscribe({
+        next: () => {
+          this.sidebarEditVisible = false;
+          this.loadDashboard(token, this.currentSiteId);
+        },
+        error: (err) => {
+          console.error('Update failed:', err);
+          console.error(err.error);   // 👈 เพิ่มบรรทัดนี้
+        }
+      });
+  }
+  getChangedFields(original: any, edited: any) {
+    const changes: any = {};
+
+    Object.keys(edited).forEach(key => {
+          
+      const originalValue = original[key];
+      const editedValue = edited[key];
+
+      // compare array
+      if (Array.isArray(originalValue) && Array.isArray(editedValue)) {
+        if (JSON.stringify(originalValue.sort()) !== JSON.stringify(editedValue.sort())) {
+          changes[key] = editedValue;
+        }
+        return;
+      }
+      if (edited[key] !== original[key]) {
+        changes[key] = edited[key];
+      }
+    });
+
+    return changes;
+  }
+  getSeverity(status: string) {
+    switch (status) {
+      case 'ใช้งานอยู่': return 'success';
+      case 'เต็ม': return 'danger';
+      case 'ไม่มีข้อมูล': return 'secondary';
+      default: return 'info';
+    }
+  }
+}

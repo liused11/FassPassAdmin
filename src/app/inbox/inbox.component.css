@@ -1,3 +1,4 @@
+/* inbox.component.css */
 .inbox-layout {
   display: flex;
   gap: 1rem;
@@ -99,4 +100,22 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.view-more {
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.card-location {
+  font-size: 13px;
+  color: #667085;
 }

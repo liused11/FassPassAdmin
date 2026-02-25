@@ -188,7 +188,9 @@
     <app-parking-history-sidebar
       [(visible)]="sidebarHistoryVisible"
       [history]="historyList"
-      [loading]="loading">
+      [loading]="loading"
+      [parkingName]="selectedBuilding?.name"
+      (loadMore)="loadHistory(true)">
     </app-parking-history-sidebar>
   </div>
 </div>

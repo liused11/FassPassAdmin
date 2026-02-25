@@ -58,4 +58,23 @@ export class ParkingService {
       { headers: this.getHeaders(token) }
     );
   }
+
+  getBuildingHistory(
+    buildingId: string,
+    limit: number,
+    offset: number,
+    token: string
+  ) {
+    return this.http.get<any>(
+      `${this.baseUrl}/get-building-history`,
+      {
+        headers: this.getHeaders(token),
+        params: {
+          building_id: buildingId,
+          limit: limit.toString(),
+          offset: offset.toString()
+        }
+      }
+    );
+  }
 }

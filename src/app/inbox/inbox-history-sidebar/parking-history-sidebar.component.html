@@ -1,62 +1,76 @@
-<!-- parking-history-sidebar.component.html -->
 <p-sidebar
   [(visible)]="visible"
   position="right"
-  styleClass="parking-sidebar"
+  styleClass="parking-history-sidebar"
   [modal]="true"
   [baseZIndex]="10000"
   [showCloseIcon]="false"
   [dismissible]="false"
-  [closeOnEscape]="false"
+  [blockScroll]="true"
 >
 
-  <!-- LOADING -->
-  <ng-container *ngIf="loading">
-    <div class="loading-wrapper">
-      <p-skeleton width="70%" height="24px" class="mb-4"></p-skeleton>
-      <p-skeleton width="100%" height="80px" class="mb-3"></p-skeleton>
-      <p-skeleton width="100%" height="80px"></p-skeleton>
-    </div>
-  </ng-container>
+  <div class="sidebar-content">
 
-  <!-- CONTENT -->
-  <div *ngIf="!loading" class="sidebar-content">
-
-    <!-- HEADER -->
-    <div class="sidebar-header">
-      <div class="title">ประวัติการแก้ไข</div>
-      <button pButton icon="pi pi-times" class="p-button-text" (click)="close()"></button>
-    </div>
-
-    <p-divider></p-divider>
-
-    <!-- NEW SECTION -->
-    <div class="section-title">ใหม่</div>
-
-    <div *ngFor="let item of history" class="history-card">
-
-      <div class="icon"
-           [ngClass]="{
-             'blue': item.color === 'blue',
-             'red': item.color === 'red'
-           }">
-        <i [class]="item.icon"></i>
+    <!-- 1. ชื่อลาน -->
+    <div class="sidebar-top">
+      <div class="parking-title">
+        {{ parkingName }}
       </div>
 
-      <div class="content">
-        <div class="card-title">
-          {{ item.title }}
+      <button class="close-btn" (click)="close()">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 2. หัวข้อ + search -->
+    <div class="history-header">
+      <div>ประวัติ</div>
+      <i class="pi pi-search"></i>
+    </div>
+
+    <!-- 3. รายการ + ดูเพิ่มเติม -->
+    <div class="list-header">
+      <div class="list-title">รายการ</div>
+      <button class="view-more" (click)="loadMore.emit()">
+        ดูรายการเพิ่มเติม
+      </button>
+    </div>
+
+    <!-- loading -->
+    <p-skeleton 
+      *ngIf="loading" 
+      height="80px" 
+      borderRadius="16px">
+    </p-skeleton>
+
+    <!-- History List -->
+    <div class="history-list">
+
+      <div *ngFor="let item of sortedHistory" class="history-card">
+
+        <div class="icon" [ngClass]="getColor(item)">
+          <i [class]="getIcon(item)"></i>
         </div>
-        <div class="card-desc">
-          {{ item.description }}
+
+        <div class="content">
+          <div class="card-title">
+            {{ getTitle(item) }}
+          </div>
+
+          <div class="card-meta">
+            แก้ไขโดย {{ item.updatedBy }}
+          </div>
+
+          <div class="card-time">
+            {{ formatDate(item.updatedAt) }}
+          </div>
         </div>
-        <div class="card-time">
-          {{ item.time }}
-        </div>
+
       </div>
 
     </div>
 
   </div>
-
 </p-sidebar>

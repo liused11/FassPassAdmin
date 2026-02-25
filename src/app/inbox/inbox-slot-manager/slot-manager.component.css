@@ -139,7 +139,11 @@
 
 /* SELECTED */
 .slot.selected {
-  box-shadow: 0 0 0 3px rgba(21, 94, 239, 0.2);
+  border: 2px solid #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+  background-color: rgba(37, 99, 235, 0.08);
+  transform: scale(1.02);
+  z-index: 2;
 }
 
 .slot:hover {

@@ -233,9 +233,12 @@
                     <div class="p-3">
 
                         <div *ngIf="log.logType === 'revision'">
-                            <div class="text-xs text-500 mb-2 font-mono">Entity ID: {{ log.entityId }}</div>
-                            <div class="border-round bg-white border-1 border-gray-200 overflow-x-auto">
-                                <table class="w-full text-sm" style="border-collapse: collapse; min-width: 250px;">
+                            <div class="text-xs text-500 mb-2 font-mono">
+                                Entity ID: {{ log.entityId }}
+                            </div>
+
+                            <div class="border-round bg-white border-1 border-gray-200">
+                                <table class="w-full text-sm revision-table" style="border-collapse: collapse;">
                                     <thead class="bg-gray-100 text-600 text-xs border-bottom-1 border-gray-200">
                                         <tr>
                                             <th class="p-2 text-left">Field</th>
@@ -243,23 +246,30 @@
                                             <th class="p-2 text-left text-green-600">New</th>
                                         </tr>
                                     </thead>
+
                                     <tbody>
-                                        <tr *ngFor="let row of log.revisionRows|| []"
+                                        <tr *ngFor="let row of log.revisionRows || []"
                                             [ngClass]="row.changed ? 'bg-yellow-50' : ''"
                                             class="border-bottom-1 border-gray-100 last:border-none">
-                                            <td class="p-2 font-semibold text-700">{{ row.field }}</td>
-                                            <td class="p-2"
+
+                                            <td class="p-2 font-semibold text-700 break-word">
+                                                {{ row.field }}
+                                            </td>
+
+                                            <td class="p-2 break-word"
                                                 [ngClass]="row.changed 
                                                 ? 'text-red-400 line-through opacity-70' 
                                                 : 'text-400'">
                                                 {{ row.old ?? 'null' }}
                                             </td>
-                                            <td class="p-2"
+
+                                            <td class="p-2 break-word"
                                                 [ngClass]="row.changed 
                                                 ? 'text-green-600 font-medium' 
                                                 : 'text-400'">
                                                 {{ row.new ?? 'null' }}
                                             </td>
+
                                         </tr>
                                     </tbody>
                                 </table>

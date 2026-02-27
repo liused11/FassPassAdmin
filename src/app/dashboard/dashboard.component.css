@@ -114,8 +114,60 @@
 .p-chart{
   height: 100%;
 }
-  /* Chart */
-  :host ::ng-deep .p-chart {
+
+/* Chart */
+:host ::ng-deep .p-chart {
   width: 100% !important;
   height: 400px !important; /* ✅ ความสูง fix */
+}
+
+.fixed-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.break-word-cell {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.break-word-cell a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* ===== Revision Table Fix ===== */
+
+.revision-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.revision-table th,
+.revision-table td {
+  vertical-align: top;
+}
+
+/* กำหนดสัดส่วนคอลัมน์ */
+.revision-table th:nth-child(1),
+.revision-table td:nth-child(1) {
+  width: 28%;
+}
+
+.revision-table th:nth-child(2),
+.revision-table td:nth-child(2) {
+  width: 36%;
+}
+
+.revision-table th:nth-child(3),
+.revision-table td:nth-child(3) {
+  width: 36%;
+}
+
+/* บังคับตัดบรรทัด */
+.break-word {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }

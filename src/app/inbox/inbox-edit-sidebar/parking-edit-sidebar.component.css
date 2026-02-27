@@ -142,6 +142,46 @@
   margin-bottom: 6px;
 }
 
+.image-upload {
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.image-upload:hover {
+  background: #eef4ff;
+  border-color: #155eef;
+}
+
+.image-preview {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.preview-item {
+  position: relative;
+}
+
+.preview-item img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #e4e7ec;
+}
+
+.preview-item .remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  padding: 4px;
+  cursor: pointer;
+}
+
+
 /* Fields */
 .field {
   display: flex;

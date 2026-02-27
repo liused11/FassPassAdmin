@@ -1,3 +1,4 @@
+// parking.model.ts
 export interface ParkingCapacity {
     ev: number;
     normal: number;

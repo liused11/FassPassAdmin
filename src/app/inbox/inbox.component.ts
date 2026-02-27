@@ -128,6 +128,7 @@ export class InboxComponent implements OnInit {
         this.buildings = summary.map((b: any) => ({
           id: b.id,
           name: b.name,
+          images: b.images ?? [],
           available: b.total - b.used,
           total: b.total,
           types: b.types ?? [],  // ประเภท
@@ -266,6 +267,7 @@ export class InboxComponent implements OnInit {
       close_time: formData.closeTime,
       price_value: formData.hourlyRate,
       is_active: formData.isActive,
+      images: formData.images ?? []
     };
 
     const originalBuilding = {
@@ -275,6 +277,7 @@ export class InboxComponent implements OnInit {
       close_time: this.originalBuilding.closeTime,
       price_value: this.originalBuilding.hourlyRate,
       is_active: this.originalBuilding.isActive,
+      images: this.originalBuilding.images ?? []
     };
         
     const entities: any[] = [];

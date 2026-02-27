@@ -54,9 +54,28 @@
           ข้อมูลทั่วไป
         </div>
 
-        <div class="map-box">
-          <i class="pi pi-map-marker"></i>
+        <div class="map-box image-upload" (click)="fileInput.click()">
+          <i class="pi pi-image"></i>
           <div>เพิ่มรูปสถานที่ของคุณ</div>
+
+          <input
+            #fileInput
+            type="file"
+            accept="image/*"
+            hidden
+            (change)="onFileSelected($event)"
+          />
+        </div>
+
+        <!-- preview -->
+        <div class="image-preview" *ngIf="form.value.images?.length">
+          <div
+            class="preview-item"
+            *ngFor="let img of form.value.images; let i = index"
+          >
+            <img [src]="img" />
+            <i class="pi pi-times remove" (click)="removeImage(i)"></i>
+          </div>
         </div>
 
         <div class="field">

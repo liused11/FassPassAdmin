@@ -18,6 +18,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DrawerModule } from 'primeng/drawer';
 import { ParkingEditSidebarModel } from '../../models/parking-edit-sidebar.model';
 import { SlotManagerComponent } from '../inbox-slot-manager/slot-manager.component';
+import { createClient } from '@supabase/supabase-js';
 
 @Component({
   selector: 'app-parking-edit-sidebar',
@@ -45,6 +46,11 @@ import { SlotManagerComponent } from '../inbox-slot-manager/slot-manager.compone
 })
 export class ParkingEditSidebarComponent implements OnChanges {
 
+  supabase = createClient(
+    'https://unxcjdypaxxztywplqdv.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
+  );
+
   @Input() visible = false;
   @Input() data!: ParkingEditSidebarModel | null;
   @Input() loading: boolean = false;
@@ -67,7 +73,7 @@ export class ParkingEditSidebarComponent implements OnChanges {
       id: [null], 
       name: ['', Validators.required],
       address: [''],
-      imageUrl: this.fb.control<string[]>([]),
+      images: this.fb.control<string[]>([]),
       isActive: [true],
 
       openTime: ['', Validators.required],
@@ -85,7 +91,7 @@ export class ParkingEditSidebarComponent implements OnChanges {
         id: null,
         name: '',
         address: '',
-        imageUrl: [],
+        images: [],
         isActive: false,   // 👈 ใส่ default boolean ชัด ๆ
         openTime: '',
         closeTime: '',
@@ -123,6 +129,47 @@ export class ParkingEditSidebarComponent implements OnChanges {
       times.push({ label: `${hour}:00 น.`, value: `${hour}:00` });
     }
     return times;
+  }
+
+  addImage(url: string) {
+    if (!url) return;
+
+    const current = this.form.value.images ?? [];
+    this.form.patchValue({
+      images: [...current, url]
+    });
+  }
+
+  removeImage(index: number) {
+    const current = [...(this.form.value.images ?? [])];
+    current.splice(index, 1);
+    this.form.patchValue({ images: current });
+  }
+
+  async onFileSelected(event: any) {
+    const file: File = event.target.files[0];
+    if (!file) return;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `buildings/${fileName}`;
+
+    const { error } = await this.supabase.storage
+      .from('parking-images')
+      .upload(filePath, file, {
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('Upload failed', error);
+      return;
+    }
+
+    const { data } = this.supabase.storage
+      .from('parking-images')
+      .getPublicUrl(filePath);
+
+    this.addImage(data.publicUrl);
   }
 
 }

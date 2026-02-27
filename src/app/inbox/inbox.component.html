@@ -76,9 +76,18 @@
           <!-- สถานที่ -->
           <td>
             <div class="flex align-items-center gap-3">
-              <div
-                class="w-2rem h-2rem border-round bg-gray-100 flex align-items-center justify-content-center border-1 border-gray-200">
-                <i class="pi pi-image text-gray-400"></i>
+              <div class="w-4rem h-3rem border-round overflow-hidden border-1 border-gray-200">
+                <img 
+                  *ngIf="building.images?.length > 0; else noImage"
+                  [src]="building.images[0]"
+                  alt="building"
+                  class="w-full h-full object-cover"
+                />
+                <ng-template #noImage>
+                  <div class="w-full h-full flex align-items-center justify-content-center bg-gray-100">
+                    <i class="pi pi-image text-gray-400"></i>
+                  </div>
+                </ng-template>
               </div>
               <div class="flex flex-column">
                 <span class="font-semibold text-gray-800">{{ building.name }}</span>

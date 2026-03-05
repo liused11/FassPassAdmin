@@ -50,7 +50,8 @@
 
       <select 
         class="main-status"
-        [(ngModel)]="selectedMainStatus">
+        [(ngModel)]="selectedMainStatus"
+        (ngModelChange)="debugStatus()">
 
         <option value="available">พร้อมใช้งาน</option>
         <option value="maintenance">ปิดปรับปรุง</option>
@@ -257,7 +258,6 @@
       <button 
         type="button"
         class="btn-update"
-        [disabled]="!hasPendingChange || isUpdating"
         (click)="updateStatus()">
 
         {{ isUpdating ? 'กำลังอัพเดต...' : 'อัพเดตสถานะ' }}

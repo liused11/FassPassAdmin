@@ -90,6 +90,23 @@ export class ParkingService {
     );
   }
 
+  updateSlotStatus(slotIds: string[], status: string, token: string) {
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      apikey: this.anonKey,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.post(
+      `${this.baseUrl}/admin_update_slot_status_with_log`,
+      {
+        slot_ids: slotIds,
+        status: status
+      },
+      { headers }
+    );
+  }
+
   upsertSlotOverride(
     payload: {
       slot_id: string;

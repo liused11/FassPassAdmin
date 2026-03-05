@@ -71,16 +71,29 @@ export class SlotDetailComponent {
   allowedMinIndex: number | null = null;
   allowedMaxIndex: number | null = null;
   
+  originalMainStatus: SlotStatus | null = null;
 
   constructor(private parkingService: ParkingService) {}
 
   ngOnInit() {
     this.generateAvailableDates();
+
+  }
+  ngOnChanges() {
+
+    if (this.slots.length && this.originalMainStatus === null) {
+      this.originalMainStatus = this.slots[0].status;
+      this.selectedMainStatus = this.slots[0].status;
+    }
+
+    if (!this.selectedDate) {
+      const today = new Date();
+      this.selectedDate = this.formatLocalDate(today);
+      this.loadSchedule();
+    }
   }
 
   loadSchedule() {
-
-    
 
     if (!this.token || !this.selectedDate || !this.slots.length) return;
     if (this.lastLoadedDate === this.selectedDate) return;
@@ -110,6 +123,8 @@ export class SlotDetailComponent {
         }
       });
   }
+
+  
 
   generateAvailableDates() {
     const today = new Date();
@@ -147,18 +162,8 @@ export class SlotDetailComponent {
     img.src = 'assets/placeholder.jpg';
   }
 
-  ngOnChanges() {
-    if (this.slots.length) {
-      this.selectedMainStatus = this.slots[0].status;
-      if (!this.selectedDate) {
-        const today = new Date();
-        this.selectedDate = this.formatLocalDate(today);
-        this.loadSchedule();
-      }
-    }
-  }
 
-  
+
 
   // ===== RANGE CLICK =====
 
@@ -322,15 +327,22 @@ export class SlotDetailComponent {
   }
 
   get hasPendingChange(): boolean {
+
+    if (!this.slots.length) return false;
+
     if (this.editMode === 'main') {
-      return this.selectedMainStatus !== this.slots[0]?.status;
+      return this.selectedMainStatus !== this.slots[0].status;
     }
 
     if (this.editMode === 'time') {
-      return this.selectedCount > 0;
+      return this.rangeStartIndex !== null;
     }
 
     return false;
+  }
+  debugStatus() {
+    console.log("selectedMainStatus:", this.selectedMainStatus);
+    console.log("slotStatus:", this.slots[0]?.status);
   }
 
   isOutOfAllowedRange(index: number): boolean {
@@ -407,6 +419,12 @@ export class SlotDetailComponent {
   }
   updateStatus() {
 
+    console.log("editMode:", this.editMode);
+    console.log("selectedMainStatus:", this.selectedMainStatus);
+    console.log("current:", this.slots[0]?.status);
+    console.log("hasPendingChange:", this.hasPendingChange);
+
+
     if (!this.token || this.isUpdating || !this.hasPendingChange) return;
 
     this.isUpdating = true;
@@ -414,21 +432,27 @@ export class SlotDetailComponent {
     // ===== MAIN MODE =====
     if (this.editMode === 'main') {
 
-      const entities = this.slots.map(slot => ({
-        entity_type: 'slots',
-        entity_id: slot.id,
-        updates: {
-          status: this.selectedMainStatus
-        }
-      }));
+      const slotIds = this.slots.map(slot => slot.id);
 
-      this.parkingService.updateEntities(entities, this.token)
+      this.parkingService
+        .updateSlotStatus(slotIds, this.selectedMainStatus, this.token)
         .pipe(finalize(() => this.isUpdating = false))
         .subscribe({
           next: () => {
+            this.slots.forEach(slot => {
+              slot.status = this.selectedMainStatus;
+            });
+
+            this.originalMainStatus = this.selectedMainStatus;
+
+
             this.updated.emit(this.selectedMainStatus);
           },
-          error: (err) => console.error(err)
+
+          error: (err) => {
+            console.error("MAIN UPDATE ERROR", err);
+            alert(JSON.stringify(err.error));
+          }
         });
 
       return;

@@ -73,7 +73,7 @@
   </div>
 </div>
 
-<!-- DIALOG -->
+<!-- DIALOG 
 <p-dialog
   header="แก้ไขสถานะช่องจอด"
   [(visible)]="showDialog"
@@ -100,4 +100,13 @@
     </button>
   </div>
 
-</p-dialog>
+</p-dialog> -->
+
+<!-- SIDEBAR (ถ้ายังอยากแสดง) comment ไว้ก่อน แต่ให่้รู้ว่ามี-->
+<app-slot-detail 
+  *ngIf="showSidebar"
+  [slots]="selectedSlots"
+  [token]="token"
+  (close)="closeSidebar()"
+  (updated)="handleUpdated($event)">
+</app-slot-detail>

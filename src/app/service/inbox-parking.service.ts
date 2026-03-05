@@ -77,4 +77,39 @@ export class ParkingService {
       }
     );
   }
+  getSlotSchedule(slotId: string, date: string, token: string) {
+    return this.http.get<any>(
+      `${this.baseUrl}/get-slot-status`,
+      {
+        headers: this.getHeaders(token),
+        params: {
+          slot_id: slotId,
+          date: date
+        }
+      }
+    );
+  }
+
+  upsertSlotOverride(
+    payload: {
+      slot_id: string;
+      mode: 'single' | 'range' | 'weekly';
+      date?: string;
+      start_date?: string;
+      end_date?: string;
+      weekday?: number;
+      time_ranges: {
+        start_time: string;
+        end_time: string;
+        status: string;
+      }[];
+    },
+    token: string
+  ) {
+    return this.http.post(
+      `${this.baseUrl}/admin_upsert_slot_overrides_with_log`,
+      payload,
+      { headers: this.getHeaders(token) }
+    );
+  }
 }

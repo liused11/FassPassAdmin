@@ -8,12 +8,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { HttpClient } from '@angular/common/http';
 import { Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ParkingService } from '../../service/inbox-parking.service';
+import { SlotDetailComponent } from '../inbox-slot-detail/slot-detail.component';
+import { SlotStatus } from '../../models/slot-status.model';
 
-type SlotStatus =
-  | 'available'
-  | 'reserved'
-  | 'occupied'
-  | 'maintenance';
 
 interface Slot {
   id: string;        // ใช้ id จริงจาก DB
@@ -43,7 +40,8 @@ interface Floor {
     FormsModule,
     DialogModule,
     ButtonModule,
-    InputTextModule
+    InputTextModule,
+    SlotDetailComponent
 ],
   templateUrl: './slot-manager.component.html',
   styleUrls: ['./slot-manager.component.css']
@@ -62,12 +60,14 @@ export class SlotManagerComponent implements OnChanges {
   showDialog = false;
   isUpdating = false;
 
+  showSidebar = false;
+
   constructor(
-    private parkingService: ParkingService
+    private parkingService: ParkingService,
   ) {
     
     // this.generateMockData();
-    this.selectedFloor = this.floors[0];
+    //this.selectedFloor = this.floors[0];
   }
 
   /*generateMockData() {
@@ -88,7 +88,12 @@ export class SlotManagerComponent implements OnChanges {
     console.log('buildingId:', this.buildingId);
     console.log('token:', this.token);
 
-    if (this.visible && this.buildingId && this.token) {
+    if (
+        this.visible &&
+        this.buildingId &&
+        this.token &&
+        this.floors.length === 0
+      ) {
         console.log('CALL loadSlots');
         this.loadSlots();
     }
@@ -167,7 +172,21 @@ export class SlotManagerComponent implements OnChanges {
 
   openDialog() {
     if (this.selectedSlots.length === 0) return;
-    this.showDialog = true;
+    //this.showDialog = true;
+    this.showSidebar = true;
+  }
+
+  closeSidebar() {
+    this.showSidebar = false;
+  }
+
+  handleUpdated(newStatus: SlotStatus) {
+    this.selectedSlots.forEach(slot => {
+      slot.status = newStatus;
+      slot.selected = false;
+    });
+
+    this.showSidebar = false;
   }
 
   updateStatus(newStatus: SlotStatus) {
@@ -221,7 +240,7 @@ export class SlotManagerComponent implements OnChanges {
         .map(zone => ({
         ...zone,
         slots: zone.slots.filter(slot =>
-            slot.id.toLowerCase().includes(keyword)
+            slot.name.toLowerCase().includes(keyword)
         )
         }))
         .filter(zone => zone.slots.length > 0);

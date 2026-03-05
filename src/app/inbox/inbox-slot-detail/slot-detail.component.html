@@ -1,0 +1,270 @@
+<div class="backdrop" (click)="onClose()"></div>
+
+<div class="slot-sidebar" (click)="$event.stopPropagation()">
+  
+  <div class="sidebar-content">
+    <!-- ===== IMAGE ===== -->
+    <div class="slot-image">
+
+      <img 
+        [src]="slotImageUrl || 'assets/placeholder.jpg'" 
+        alt="slot image"
+        (error)="onImageError($event)"
+      />
+
+      <div class="image-overlay">
+        <div class="slot-name">
+          {{ slotName || 'Slot A1' }}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== EDIT MODE SELECTOR ===== -->
+    <div class="section">
+      <label class="section-title">ประเภทการแก้ไข</label>
+
+      <div class="mode-toggle">
+        <button 
+          type="button"
+          [class.active]="editMode === 'main'"
+          (click)="editMode = 'main'">
+          สถานะหลัก
+        </button>
+
+        <button 
+          type="button"
+          [class.active]="editMode === 'time'"
+          (click)="editMode = 'time'">
+          ตามช่วงเวลา
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================= -->
+    <!-- ===== MAIN STATUS ===== -->
+    <!-- ========================= -->
+    <div class="section" *ngIf="editMode === 'main'">
+
+      <label class="section-title">สถานะหลัก</label>
+
+      <select 
+        class="main-status"
+        [(ngModel)]="selectedMainStatus">
+
+        <option value="available">พร้อมใช้งาน</option>
+        <option value="maintenance">ปิดปรับปรุง</option>
+
+      </select>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- ===== TIME STATUS ===== -->
+    <!-- ========================= -->
+    <div class="section" *ngIf="editMode === 'time'">
+
+      <label class="section-title">รูปแบบการตั้งค่า</label>
+
+      <div class="mode-toggle">
+        <button
+          type="button"
+          [class.active]="scheduleMode === 'single'"
+          (click)="scheduleMode = 'single'">
+          วันเดียว
+        </button>
+
+        <button
+          type="button"
+          [class.active]="scheduleMode === 'range'"
+          (click)="scheduleMode = 'range'">
+          ช่วงวัน (ซ้ำทุกวัน)
+        </button>
+
+        <button
+          type="button"
+          [class.active]="scheduleMode === 'weekly'"
+          (click)="scheduleMode = 'weekly'">
+          รายสัปดาห์
+        </button>
+      </div>
+
+      <!-- ===== SINGLE DAY ===== -->
+      <ng-container *ngIf="scheduleMode === 'single'">
+
+          <div class="date-selector">
+            <div
+              class="date-card"
+              *ngFor="let d of availableDates"
+              [class.active]="selectedDate === d.date"
+              (click)="selectDate(d.date)"
+            >
+              <div class="weekday">{{ d.weekday }}</div>
+              <div class="day">{{ d.label }}</div>
+            </div>
+          </div>
+      </ng-container>
+
+      <!-- ===== DATE RANGE ===== -->
+      <ng-container *ngIf="scheduleMode === 'range'">
+
+        <div class="range-date-row">
+          <input type="date"
+                class="date-picker"
+                [(ngModel)]="rangeStartDate" />
+
+          <span>ถึง</span>
+
+          <input type="date"
+                class="date-picker"
+                [(ngModel)]="rangeEndDate" />
+        </div>
+
+      </ng-container>
+
+      <!-- ===== WEEKLY ===== -->
+      <ng-container *ngIf="scheduleMode === 'weekly'">
+
+        <div class="range-date-row">
+          <input type="date"
+                class="date-picker"
+                [(ngModel)]="rangeStartDate" />
+
+          <span>ถึง</span>
+
+          <input type="date"
+                class="date-picker"
+                [(ngModel)]="rangeEndDate" />
+        </div>
+
+        <select class="main-status"
+                [(ngModel)]="selectedWeekday">
+          <option [ngValue]="0">อาทิตย์</option>
+          <option [ngValue]="1">จันทร์</option>
+          <option [ngValue]="2">อังคาร</option>
+          <option [ngValue]="3">พุธ</option>
+          <option [ngValue]="4">พฤหัส</option>
+          <option [ngValue]="5">ศุกร์</option>
+          <option [ngValue]="6">เสาร์</option>
+        </select>
+
+      </ng-container>
+
+      <!-- ===== TIME GRID ===== -->
+      <div class="time-grid">
+        <div
+          class="time-card"
+          *ngFor="let slot of timeSlots; let i = index"
+          [ngClass]="[
+            slot.status,
+            isInRange(i) ? 'range-selected' : '',
+            isPastTimeSlot(slot) ? 'past-slot' : '',
+            isUnclickable(slot) ? 'disabled' : '',
+            isOutOfAllowedRange(i) ? 'disabled' : ''
+          ]"
+          (click)="onTimeSlotClick(i)"
+        >
+          <div class="time">{{ slot.time }}</div>
+          <div class="status-label">
+            {{ getStatusLabel(slot.status) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== RANGE BAR ===== -->
+      <div *ngIf="selectedCount > 0" class="range-bar">
+
+        <div class="range-info">
+          เลือก {{ selectedCount }} ช่อง
+          <span class="range-time">
+            ({{ selectedRangeLabel }})
+          </span>
+        </div>
+
+        <div class="status-toggle">
+
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.active]="pendingStatus === 'available'"
+            (click)="pendingStatus = 'available'">
+            ● พร้อมใช้งาน
+          </button>
+
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.active]="pendingStatus === 'maintenance'"
+            (click)="pendingStatus = 'maintenance'">
+            ● ปิดปรับปรุง
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+  <!-- ========================= -->
+  <!-- ===== SUMMARY PANEL ===== -->
+  <!-- ========================= -->
+  <div class="summary-bar">
+
+    <div class="summary-text">
+
+      <!-- MAIN MODE -->
+      <ng-container *ngIf="editMode === 'main'">
+
+        <ng-container *ngIf="hasPendingChange; else noChangeMain">
+          จะเปลี่ยนสถานะหลักเป็น 
+          <strong>{{ getStatusLabel(selectedMainStatus) }}</strong>
+        </ng-container>
+
+        <ng-template #noChangeMain>
+          ยังไม่มีการเปลี่ยนแปลง
+        </ng-template>
+
+      </ng-container>
+
+
+      <!-- TIME MODE -->
+      <ng-container *ngIf="editMode === 'time'">
+
+        <ng-container *ngIf="selectedCount > 0; else noSelection">
+          จะเปลี่ยน {{ selectedCount }} ช่อง
+          ({{ selectedRangeLabel }})
+          เป็น {{ getStatusLabel(pendingStatus) }}
+        </ng-container>
+
+        <ng-template #noSelection>
+          กรุณาเลือกช่วงเวลา
+        </ng-template>
+
+      </ng-container>
+
+    </div>
+
+    <div class="summary-actions">
+
+      <button 
+        type="button"
+        class="btn-cancel"
+        (click)="onCancelClick()">
+        ยกเลิก
+      </button>
+
+      <button 
+        type="button"
+        class="btn-update"
+        [disabled]="!hasPendingChange || isUpdating"
+        (click)="updateStatus()">
+
+        {{ isUpdating ? 'กำลังอัพเดต...' : 'อัพเดตสถานะ' }}
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

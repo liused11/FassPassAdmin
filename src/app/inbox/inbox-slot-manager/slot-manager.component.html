@@ -52,9 +52,9 @@
           *ngFor="let slot of zone.slots"
           class="slot"
           [ngClass]="{
-            'available': slot.status === 'available',
-            'occupied': slot.status === 'occupied',
-            'maintenance': slot.status === 'maintenance',
+            'available': slot.current_status === 'available',
+            'occupied': slot.current_status === 'occupied',
+            'maintenance': slot.current_status === 'maintenance',
             'selected': slot.selected
             }"
           (click)="toggleSlot(slot)"
@@ -64,7 +64,7 @@
           </div>
 
           <div class="slot-status">
-              {{ getStatusLabel(slot.status) }}
+              {{ getStatusLabel(slot.current_status) }}
           </div>
         </div>
       </div>

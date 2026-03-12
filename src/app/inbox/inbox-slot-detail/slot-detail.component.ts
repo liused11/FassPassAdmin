@@ -1,11 +1,9 @@
-// slot-detail.component.ts
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ParkingService } from '../../service/inbox-parking.service';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 import { SlotStatus } from '../../models/slot-status.model';
-
 
 interface Slot {
   id: string;
@@ -33,33 +31,22 @@ export class SlotDetailComponent {
   @Output() close = new EventEmitter<void>();
   @Output() updated = new EventEmitter<SlotStatus>();
 
-  isUpdating = false;
-  selectedMainStatus: SlotStatus = 'available';
-  // ===== EDIT MODE =====
+  constructor(private parkingService: ParkingService) {}
+
   editMode: 'main' | 'time' = 'main';
 
-    // 🟢 mock time slots
-  timeSlots: TimeSlot[] = [];
-  selectedTimeSlots: TimeSlot[] = [];
-  bulkStatus: SlotStatus = 'available';
+  isUpdating = false;
 
-  // ===== RANGE SELECTOR =====
-  rangeStartIndex: number | null = null;
-  rangeEndIndex: number | null = null;
-  pendingStatus: SlotStatus = 'available';
+  selectedMainStatus: SlotStatus = 'available';
+  originalMainStatus: SlotStatus | null = null;
 
-  // 🟢 mock slot info
   slotImageUrl?: string;
   slotName?: string;
 
-  // ===== SCHEDULE MODE =====
-  scheduleMode: 'single' | 'range' | 'weekly' = 'single';
+  timeSlots: TimeSlot[] = [];
 
   selectedDate?: string;
-  rangeStartDate?: string;
-  rangeEndDate?: string;
-  selectedWeekday?: number;
-  private lastLoadedDate?: string; // เพื่อป้องกันการโหลดซ้ำ
+  private lastLoadedDate?: string;
 
   availableDates: {
     label: string;
@@ -67,18 +54,18 @@ export class SlotDetailComponent {
     weekday: string;
   }[] = [];
 
-  // contiguous boundary
+  rangeStartIndex: number | null = null;
+  rangeEndIndex: number | null = null;
+
   allowedMinIndex: number | null = null;
   allowedMaxIndex: number | null = null;
-  
-  originalMainStatus: SlotStatus | null = null;
 
-  constructor(private parkingService: ParkingService) {}
+  pendingStatus: SlotStatus = 'available';
 
   ngOnInit() {
     this.generateAvailableDates();
-
   }
+
   ngOnChanges() {
 
     if (this.slots.length && this.originalMainStatus === null) {
@@ -87,8 +74,7 @@ export class SlotDetailComponent {
     }
 
     if (!this.selectedDate) {
-      const today = new Date();
-      this.selectedDate = this.formatLocalDate(today);
+      this.selectedDate = this.formatLocalDate(new Date());
       this.loadSchedule();
     }
   }
@@ -99,8 +85,6 @@ export class SlotDetailComponent {
     if (this.lastLoadedDate === this.selectedDate) return;
 
     this.lastLoadedDate = this.selectedDate;
-    console.log('🔥 Fetching schedule for:', this.selectedDate);
-    console.log('UI selectedDate:', this.selectedDate);
 
     const slotId = this.slots[0].id;
 
@@ -108,14 +92,12 @@ export class SlotDetailComponent {
       .getSlotSchedule(slotId, this.selectedDate, this.token)
       .subscribe({
         next: (res) => {
-          console.log('🔥 Fetching schedule for:', this.selectedDate);
 
           this.timeSlots = res.data.time_slots.map((t: any) => ({
             time: t.time.replace('-', ' - '),
             status: t.status
           }));
 
-          // reset selection
           this.cancelRange();
         },
         error: (err) => {
@@ -124,32 +106,31 @@ export class SlotDetailComponent {
       });
   }
 
-  
-
   generateAvailableDates() {
+
     const today = new Date();
     this.availableDates = [];
 
     for (let i = 0; i < 5; i++) {
+
       const d = new Date(today);
       d.setDate(today.getDate() + i);
 
       const dateStr = this.formatLocalDate(d);
 
-      const weekday = d.toLocaleDateString('th-TH', { weekday: 'long' });
-
       this.availableDates.push({
         label: d.getDate().toString(),
         date: dateStr,
-        weekday
+        weekday: d.toLocaleDateString('th-TH', { weekday: 'long' })
       });
     }
 
-    // default เลือกวันนี้
     this.selectedDate = this.availableDates[0].date;
     this.loadSchedule();
   }
+
   private formatLocalDate(date: Date): string {
+
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -157,20 +138,16 @@ export class SlotDetailComponent {
     return `${year}-${month}-${day}`;
   }
 
+  selectDate(date: string) {
+    this.selectedDate = date;
+    this.loadSchedule();
+  }
+
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;
     img.src = 'assets/placeholder.jpg';
   }
 
-
-
-
-  // ===== RANGE CLICK =====
-
-  selectDate(date: string) {
-    this.selectedDate = date;
-    this.loadSchedule();
-  }
   isPastTimeSlot(slot: TimeSlot): boolean {
 
     if (!this.selectedDate) return false;
@@ -178,26 +155,11 @@ export class SlotDetailComponent {
     const now = new Date();
     const selected = new Date(this.selectedDate);
 
-    // เอาเฉพาะวันที่ (ตัดเวลาออก)
-    const todayDateOnly = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const selectedDay = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate());
 
-    const selectedDateOnly = new Date(
-      selected.getFullYear(),
-      selected.getMonth(),
-      selected.getDate()
-    );
-
-    // ถ้าเป็นวันก่อนหน้า → ทั้งวัน disable
-    if (selectedDateOnly < todayDateOnly) return true;
-
-    // ถ้าเป็นวันอนาคต → แก้ได้หมด
-    if (selectedDateOnly > todayDateOnly) return false;
-
-    // ===== ตรงนี้คือ "วันนี้" เท่านั้น =====
+    if (selectedDay < today) return true;
+    if (selectedDay > today) return false;
 
     const endTime = slot.time.split(' - ')[1];
     const [hour, minute] = endTime.split(':').map(Number);
@@ -212,11 +174,9 @@ export class SlotDetailComponent {
 
     return slotEnd <= now;
   }
+
   isUnclickable(slot: TimeSlot): boolean {
-    return (
-      slot.status === 'reserved' ||
-      this.isPastTimeSlot(slot)
-    );
+    return slot.status === 'reserved' || this.isPastTimeSlot(slot);
   }
 
   private calculateContiguousRange(startIndex: number) {
@@ -226,21 +186,19 @@ export class SlotDetailComponent {
     let min = startIndex;
     let max = startIndex;
 
-    // 🔎 scan left
     for (let i = startIndex - 1; i >= 0; i--) {
 
       const slot = this.timeSlots[i];
 
       if (
-        slot.status !== baseStatus ||   // 🔥 status ต้องเหมือนกัน
-        slot.status === 'reserved' ||   // reserved กันเสมอ
-        this.isPastTimeSlot(slot)       // past กันเสมอ
+        slot.status !== baseStatus ||
+        slot.status === 'reserved' ||
+        this.isPastTimeSlot(slot)
       ) break;
 
       min = i;
     }
 
-    // 🔎 scan right
     for (let i = startIndex + 1; i < this.timeSlots.length; i++) {
 
       const slot = this.timeSlots[i];
@@ -257,16 +215,14 @@ export class SlotDetailComponent {
     this.allowedMinIndex = min;
     this.allowedMaxIndex = max;
   }
+
   onTimeSlotClick(index: number) {
 
     const slot = this.timeSlots[index];
-
-    // 🔥 ใช้ isUnclickable แทน
     if (this.isUnclickable(slot)) return;
 
-
-    // ยังไม่มี start → ตั้ง start และคำนวณ boundary
     if (this.rangeStartIndex === null) {
+
       this.rangeStartIndex = index;
       this.rangeEndIndex = null;
 
@@ -274,7 +230,6 @@ export class SlotDetailComponent {
       return;
     }
 
-    // มี start แล้ว → ต้องอยู่ใน allowed boundary เท่านั้น
     if (
       this.allowedMinIndex !== null &&
       this.allowedMaxIndex !== null &&
@@ -285,19 +240,17 @@ export class SlotDetailComponent {
       return;
     }
 
-    // ถ้ากดนอก boundary → เริ่มใหม่
     this.rangeStartIndex = index;
     this.rangeEndIndex = null;
     this.calculateContiguousRange(index);
   }
 
-  // ===== CHECK SELECTED RANGE =====
   isInRange(index: number): boolean {
+
     if (this.rangeStartIndex === null) return false;
-    if (this.rangeEndIndex === null) {
+
+    if (this.rangeEndIndex === null)
       return index === this.rangeStartIndex;
-    }
-    
 
     const min = Math.min(this.rangeStartIndex, this.rangeEndIndex);
     const max = Math.max(this.rangeStartIndex, this.rangeEndIndex);
@@ -305,8 +258,16 @@ export class SlotDetailComponent {
     return index >= min && index <= max;
   }
 
-  // ===== GET RANGE INFO =====
+  isOutOfAllowedRange(index: number): boolean {
+
+    if (this.rangeStartIndex === null) return false;
+    if (this.allowedMinIndex === null || this.allowedMaxIndex === null) return false;
+
+    return index < this.allowedMinIndex || index > this.allowedMaxIndex;
+  }
+
   get selectedCount(): number {
+
     if (this.rangeStartIndex === null) return 0;
     if (this.rangeEndIndex === null) return 1;
 
@@ -314,11 +275,11 @@ export class SlotDetailComponent {
   }
 
   get selectedRangeLabel(): string {
+
     if (this.rangeStartIndex === null) return '';
 
-    if (this.rangeEndIndex === null) {
+    if (this.rangeEndIndex === null)
       return this.timeSlots[this.rangeStartIndex].time;
-    }
 
     const min = Math.min(this.rangeStartIndex, this.rangeEndIndex);
     const max = Math.max(this.rangeStartIndex, this.rangeEndIndex);
@@ -330,74 +291,34 @@ export class SlotDetailComponent {
 
     if (!this.slots.length) return false;
 
-    if (this.editMode === 'main') {
+    if (this.editMode === 'main')
       return this.selectedMainStatus !== this.slots[0].status;
-    }
 
-    if (this.editMode === 'time') {
+    if (this.editMode === 'time')
       return this.rangeStartIndex !== null;
-    }
 
     return false;
   }
-  debugStatus() {
-    console.log("selectedMainStatus:", this.selectedMainStatus);
-    console.log("slotStatus:", this.slots[0]?.status);
-  }
 
-  isOutOfAllowedRange(index: number): boolean {
-
-    if (this.rangeStartIndex === null) return false;
-
-    if (
-      this.allowedMinIndex === null ||
-      this.allowedMaxIndex === null
-    ) return false;
-
-    return index < this.allowedMinIndex || index > this.allowedMaxIndex;
-  }
-
-  // ===== APPLY STATUS (Mock) =====
-  applyRangeStatus() {
-
-    if (this.rangeStartIndex === null) return;
-
-    const min = this.rangeEndIndex === null
-      ? this.rangeStartIndex
-      : Math.min(this.rangeStartIndex, this.rangeEndIndex);
-
-    const max = this.rangeEndIndex === null
-      ? this.rangeStartIndex
-      : Math.max(this.rangeStartIndex, this.rangeEndIndex);
-
-    for (let i = min; i <= max; i++) {
-      this.timeSlots[i].status = this.pendingStatus;
-    }
-
-    this.cancelRange();
-  }
-
-  // ===== CANCEL =====
   cancelRange() {
+
     this.rangeStartIndex = null;
     this.rangeEndIndex = null;
+
     this.allowedMinIndex = null;
     this.allowedMaxIndex = null;
   }
 
   getStatusLabel(status: SlotStatus): string {
-    switch (status) {
-      case 'available':
-        return 'พร้อมใช้งาน';
-      case 'reserved':
-        return 'ถูกจอง';
-      case 'maintenance':
-        return 'ปิดปรับปรุง';
 
-      default:
-        return status;
+    switch (status) {
+      case 'available': return 'พร้อมใช้งาน';
+      case 'reserved': return 'ถูกจอง';
+      case 'maintenance': return 'ปิดปรับปรุง';
+      default: return status;
     }
   }
+
   onCancelClick() {
 
     if (this.editMode === 'main') {
@@ -405,151 +326,87 @@ export class SlotDetailComponent {
       return;
     }
 
-    if (this.editMode === 'time') {
-      this.cancelRange();
-    }
+    this.cancelRange();
   }
 
-  // =========================
-  // MAIN STATUS (ยังใช้ API เดิม)
-  // =========================
-
-  get slotCount(): number {
-    return this.slots.length;
-  }
   updateStatus() {
-
-    console.log("editMode:", this.editMode);
-    console.log("selectedMainStatus:", this.selectedMainStatus);
-    console.log("current:", this.slots[0]?.status);
-    console.log("hasPendingChange:", this.hasPendingChange);
-
 
     if (!this.token || this.isUpdating || !this.hasPendingChange) return;
 
     this.isUpdating = true;
 
-    // ===== MAIN MODE =====
     if (this.editMode === 'main') {
 
-      const slotIds = this.slots.map(slot => slot.id);
+      const slotIds = this.slots.map(s => s.id);
 
       this.parkingService
         .updateSlotStatus(slotIds, this.selectedMainStatus, this.token)
         .pipe(finalize(() => this.isUpdating = false))
         .subscribe({
           next: () => {
-            this.slots.forEach(slot => {
-              slot.status = this.selectedMainStatus;
-            });
+
+            this.slots.forEach(s => s.status = this.selectedMainStatus);
 
             this.originalMainStatus = this.selectedMainStatus;
-
-
             this.updated.emit(this.selectedMainStatus);
           },
-
           error: (err) => {
             console.error("MAIN UPDATE ERROR", err);
-            alert(JSON.stringify(err.error));
           }
         });
 
       return;
     }
 
-    // ===== TIME MODE =====
-    if (this.editMode === 'time') {
+    const slotId = this.slots[0].id;
 
-      if (!this.slots.length || !this.token) {
-        this.isUpdating = false;
-        return;
-      }
-        // 👇 เพิ่มตรงนี้
-      if (this.scheduleMode !== 'single') {
-        alert('ยังไม่รองรับโหมดนี้');
-        this.isUpdating = false;
-        return;
-      }
+    const min = this.rangeEndIndex === null
+      ? this.rangeStartIndex!
+      : Math.min(this.rangeStartIndex!, this.rangeEndIndex);
 
-      const slotId = this.slots[0].id;
+    const max = this.rangeEndIndex === null
+      ? this.rangeStartIndex!
+      : Math.max(this.rangeStartIndex!, this.rangeEndIndex);
 
-      const min = this.rangeEndIndex === null
-        ? this.rangeStartIndex!
-        : Math.min(this.rangeStartIndex!, this.rangeEndIndex);
+    const startTime = this.timeSlots[min].time.split(' - ')[0];
+    const endTime = this.timeSlots[max].time.split(' - ')[1];
 
-      const max = this.rangeEndIndex === null
-        ? this.rangeStartIndex!
-        : Math.max(this.rangeStartIndex!, this.rangeEndIndex);
+    const payload = {
+      slot_id: slotId,
+      mode: 'single',
+      date: this.selectedDate,
+      time_ranges: [
+        {
+          start_time: startTime,
+          end_time: endTime,
+          status: this.pendingStatus
+        }
+      ]
+    };
 
-      const startTime = this.timeSlots[min].time.split(' - ')[0];
-      const endTime = this.timeSlots[max].time.split(' - ')[1];
-
-      const payload: any = {
-        slot_id: slotId,
-        mode: this.scheduleMode,
-        time_ranges: [
-          {
-            start_time: startTime,
-            end_time: endTime,
-            status: this.pendingStatus
-          }
-        ]
-      };
-
-      if (this.scheduleMode === 'single' && !this.selectedDate) {
-        this.isUpdating = false;
-        return;
-      }
-
-      payload.date = this.selectedDate;
-
-      console.log('Payload:', payload);
-
-      this.parkingService
-        .upsertSlotOverride(payload, this.token)
-        .pipe(finalize(() => this.isUpdating = false))
-        .subscribe({
-          next: () => {
-            this.lastLoadedDate = undefined;   // 👈 เพิ่มบรรทัดนี้
-            this.loadSchedule();   // reload หลัง update
-            this.cancelRange();
-          },
-          error: (err) => {
-            console.error('Update time slot failed', err);
-          }
-        });
-
-      return;
-    }
-  }
-  /*updateMainStatus(newStatus: SlotStatus) {
-    if (!this.token || this.isUpdating) return;
-
-    this.isUpdating = true;
-    const entities = this.slots.map(slot => ({
-      entity_type: 'slots',
-      entity_id: slot.id,
-      updates: {
-        status: newStatus
-      }
-    }));
-
-    this.parkingService.updateEntities(entities, this.token)
-      .pipe(
-        finalize(() => this.isUpdating = false)
-      )
+    this.parkingService
+      .upsertSlotOverride(payload, this.token)
+      .pipe(finalize(() => this.isUpdating = false))
       .subscribe({
         next: () => {
-          this.updated.emit(newStatus);
+
+          this.lastLoadedDate = undefined;
+          this.loadSchedule();
+
+          this.cancelRange();
         },
         error: (err) => {
-          console.error('Update failed:', err);
-        } 
+          console.error('Update time slot failed', err);
+        }
       });
-  }*/
+  }
 
   onClose() {
     this.close.emit();
+  }
+
+  debugStatus() {
+    console.log("selectedMainStatus:", this.selectedMainStatus);
+    console.log("slotStatus:", this.slots[0]?.status);
   }
 }

@@ -13,12 +13,12 @@ import { SlotStatus } from '../../models/slot-status.model';
 
 
 interface Slot {
-  id: string;        // ใช้ id จริงจาก DB
-  name: string;      // A-1
-  status: SlotStatus;
+  id: string;
+  name: string;
+  status: SlotStatus;        // base status (DB)
+  current_status: SlotStatus; // computed
   selected?: boolean;
 }
-
 interface Zone {
   id: string;
   name: string;
@@ -61,6 +61,8 @@ export class SlotManagerComponent implements OnChanges {
   isUpdating = false;
 
   showSidebar = false;
+  refreshInterval: ReturnType<typeof setInterval> | null = null;
+  selectedSlotIds = new Set<string>();
 
   constructor(
     private parkingService: ParkingService,
@@ -83,36 +85,56 @@ export class SlotManagerComponent implements OnChanges {
       this.floors.push({ floor: f, zones });
     }
   }*/
-  ngOnChanges() {
-    console.log('visible:', this.visible);
-    console.log('buildingId:', this.buildingId);
-    console.log('token:', this.token);
+  ngOnChanges(changes: SimpleChanges) {
 
-    if (
-        this.visible &&
-        this.buildingId &&
-        this.token &&
-        this.floors.length === 0
-      ) {
-        console.log('CALL loadSlots');
-        this.loadSlots();
+    if (this.visible && this.buildingId && this.token) {
+
+      this.loadSlots();
+
+      if (!this.refreshInterval) {
+        this.refreshInterval = setInterval(() => {
+          this.loadSlots();
+        }, 1000);
+      }
+
     }
+
+    if (!this.visible && this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+
   }
   
+  ngOnDestroy() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+  }
   async loadSlots() {
-     if (!this.buildingId || !this.token) return;
+    if (this.showSidebar) return;
+    if (!this.buildingId || !this.token) return;
 
 
     this.parkingService
-        .getBuildingSlots(this.buildingId, this.token)
+        .getBuildingSlotsStatus(this.buildingId, this.token)
         .subscribe({
         next: (res) => {
             if (!res.success) return;
 
+            const prevFloorId = this.selectedFloor?.id;
             this.floors = this.transformApiData(res.data);
 
+            if (prevFloorId) {
+              const found = this.floors.find(f => f.id === prevFloorId);
+              if (found) {
+                this.selectedFloor = found;
+                return;
+              }
+            }
+            
             if (this.floors.length) {
-            this.selectedFloor = this.floors[0];
+              this.selectedFloor = this.floors[0];
             }
         },
         error: (err) => {
@@ -131,8 +153,9 @@ export class SlotManagerComponent implements OnChanges {
         slots: zone.slots.map((slot: any) => ({
             id: slot.id,
             name: slot.name,
-            status: slot.status,
-            selected: false
+            status: slot.status,             // DB
+            current_status: slot.current_status ?? slot.status,
+            selected: this.selectedSlotIds.has(slot.id)
         }))
         }))
     }));
@@ -149,25 +172,34 @@ export class SlotManagerComponent implements OnChanges {
     this.searchText = '';
   }
   clearSelection() {
+    this.selectedSlotIds.clear();
+
     this.floors.forEach(f =>
-        f.zones.forEach(z =>
+      f.zones.forEach(z =>
         z.slots.forEach(s => s.selected = false)
-        )
+      )
     );
   }
 
   toggleSlot(slot: Slot) {
-    if (slot.status === 'occupied' || slot.status === 'reserved') {
-      return; // ห้ามเลือก
+    if (slot.current_status === 'occupied' || slot.current_status === 'reserved'){
+      return;
     }
-    slot.selected = !slot.selected;
-  }
 
+    if (this.selectedSlotIds.has(slot.id)) {
+      this.selectedSlotIds.delete(slot.id);
+      slot.selected = false;
+    } else {
+      this.selectedSlotIds.add(slot.id);
+      slot.selected = true;
+    }
+  }
   get selectedSlots(): Slot[] {
     if (!this.selectedFloor) return [];
+
     return this.selectedFloor.zones
       .flatMap(z => z.slots)
-      .filter(s => s.selected);
+      .filter(slot => this.selectedSlotIds.has(slot.id));
   }
 
   openDialog() {
@@ -181,12 +213,14 @@ export class SlotManagerComponent implements OnChanges {
   }
 
   handleUpdated(newStatus: SlotStatus) {
-    this.selectedSlots.forEach(slot => {
+    /*this.selectedSlots.forEach(slot => {
       slot.status = newStatus;
       slot.selected = false;
-    });
+    });*/
 
     this.showSidebar = false;
+    this.clearSelection();
+    this.loadSlots(); 
   }
 
   updateStatus(newStatus: SlotStatus) {

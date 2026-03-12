@@ -55,7 +55,18 @@ export class ParkingService {
   getBuildingSlots(buildingId: string, token: string) {
     return this.http.get<any>(
       `${this.baseUrl}/get-building-slots?building_id=${buildingId}`,
-      { headers: this.getHeaders(token) }
+      { 
+        headers: this.getHeaders(token) 
+      }
+    );
+  }
+
+  getBuildingSlotsStatus(buildingId: string, token: string) {
+    return this.http.get<any>(
+      `${this.baseUrl}/get-building-slots-status?building_id=${buildingId}`,
+      {
+        headers: this.getHeaders(token)
+      }
     );
   }
 
@@ -110,7 +121,6 @@ export class ParkingService {
   upsertSlotOverride(
     payload: {
       slot_id: string;
-      mode: 'single' | 'range' | 'weekly';
       date?: string;
       start_date?: string;
       end_date?: string;

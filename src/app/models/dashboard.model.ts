@@ -27,6 +27,28 @@ export interface RevisionRow {
   changed: boolean;
 }
 
+export interface EntityInfo {
+  title?: string;
+  plate?: string;
+  model?: string;
+  province?: string;
+  slot?: string;
+  floor?: string;
+}
+
+export interface ContextInfo {
+  location?: string;
+  device?: string;
+  method?: string;
+  verification?: string;
+}
+
+export interface ResultInfo {
+  status?: string;
+  by?: string;
+  time?: string;
+}
+
 export interface ActivityLog {
   id: number;
   logType: 'revision' | 'activity';
@@ -36,10 +58,20 @@ export interface ActivityLog {
   user: string;
   category: 'normal' | 'abnormal';
   status: 'success' | 'warning' | 'denied' | 'error';
+
   entityId?: string;
+  entityType?:string;
+  
   detail?: string;
+
+  entityInfo?: EntityInfo | null;
+  contextInfo?: ContextInfo | null;
+  resultInfo?: ResultInfo | null;
+
   revisionRows?: RevisionRow[] | null;
   meta?: Meta | null;
+  schedule?: any; 
+  changes?: any;   // ✅ ADD
 }
 
 export interface Reservation {

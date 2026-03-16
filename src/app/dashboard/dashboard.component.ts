@@ -181,9 +181,32 @@ export class DashboardComponent implements OnInit {
               }
             }
 
+            let parsedChanges = null;
+            if (a.changes) {
+              try {
+                parsedChanges = typeof a.changes === 'string'
+                  ? JSON.parse(a.changes)
+                  : a.changes;
+              } catch (err) {
+                console.error('Invalid changes JSON:', a.changes);
+              }
+            }
+
+
+            let parsedNewData = null;
+            if (a.new_data) {
+              try {
+                parsedNewData = typeof a.new_data === 'string'
+                  ? JSON.parse(a.new_data)
+                  : a.new_data;
+              } catch (err) {
+                console.error('Invalid new_data JSON:', a.new_data);
+              }
+            }
 
             // ===== parse meta =====
             let parsedMeta = null;
+
             if (a.meta) {
               try {
                 parsedMeta = typeof a.meta === 'string'
@@ -194,24 +217,53 @@ export class DashboardComponent implements OnInit {
                 parsedMeta = null;
               }
             }
+            const entityInfo = parsedMeta?.entity ?? null;
+
+            let contextInfo: any = null;
+
+            if (
+              parsedMeta?.location ||
+              parsedMeta?.device ||
+              parsedMeta?.method ||
+              parsedMeta?.verification
+            ) {
+              contextInfo = {
+                location: parsedMeta?.location,
+                device: parsedMeta?.device,
+                method: parsedMeta?.method,
+                verification: parsedMeta?.verification
+              };
+            }
+
+            const resultInfo = {
+              status: a.status,
+              by: a.user_name,
+              time: a.time
+            };
 
             return {
               id: a.id,
               time: a.time,
-              type: a.entity_type || a.action, // ✅ เพิ่ม type กัน undefined
+              type: a.entity_type || a.action,
               action: a.action,
               category: a.category,
               status: a.status,
 
-              // rename snake_case → camelCase
               logType: a.log_type,
               user: a.user_name,
+
               entityId: a.entity_id,
               entityType: a.entity_type,
 
+              entityInfo,
+              contextInfo,
+              resultInfo,
+
               detail: a.detail,
               revisionRows,
-              meta: parsedMeta
+              meta: parsedMeta,
+              schedule: parsedNewData,
+              changes: parsedChanges   // ✅ ADD THIS
             };
           });
         },
@@ -239,6 +291,7 @@ export class DashboardComponent implements OnInit {
 
   getActivityIcon(type: string): string {
     switch (type) {
+      case 'vehicle': return 'pi pi-car';
       case 'Check-in': return 'pi pi-id-card';
       case 'Reservation': return 'pi pi-calendar-plus';
       case 'User Mgmt': return 'pi pi-user-edit';
@@ -249,6 +302,46 @@ export class DashboardComponent implements OnInit {
       default: return 'pi pi-info-circle';
     }
   }
+  formatAction(action?: string): string {
+    if (!action) return '';
+
+    const actionMap: Record<string, string> = {
+      vehicle_delete: 'Vehicle Deleted',
+      vehicle_create: 'Vehicle Created',
+      vehicle_update: 'Vehicle Updated',
+
+      slot_override_available: 'Slot Availability Override',
+      slot_override_block: 'Slot Blocked',
+
+      reservation_create: 'Reservation Created',
+      reservation_cancel: 'Reservation Cancelled',
+
+      login_success: 'User Login',
+      login_failed: 'Login Failed'
+    };
+
+    if (actionMap[action]) {
+      return actionMap[action];
+    }
+
+    // fallback auto format
+    return action
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+  formatEntity(type?: string): string {
+    if (!type) return 'Entity';
+
+    const map: Record<string, string> = {
+      vehicle: 'Vehicle',
+      cars: 'Vehicle',
+      reservation: 'Reservation',
+      slot: 'Parking Slot',
+      user: 'User'
+    };
+
+    return map[type] || type;
+}
 
   onDateChange() {
     const siteId = this.siteStateService.getCurrentSite();

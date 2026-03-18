@@ -114,12 +114,16 @@ export class DashboardComponent implements OnInit {
     this.loading = true; // Start loading
     // default = วันนี้
     
-    const date =
-      this.selectedDate
-        ? this.selectedDate.toISOString().slice(0, 10)
-        : null
+    // แก้ไขจุดที่ 2: ปรับการส่ง format วันที่ ไม่ใช้ toISOString() เพราะมันเป็น UTC
+    let dateStr: string | null = null;
+    if (this.selectedDate) {
+      const year = this.selectedDate.getFullYear();
+      const month = String(this.selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(this.selectedDate.getDate()).padStart(2, '0');
+      dateStr = `${year}-${month}-${day}`;
+    }
 
-    this.dashboardService.getAllActivities(date, siteId, token)
+    this.dashboardService.getAllActivities(dateStr, siteId, token)
       .pipe(
         finalize(() => this.loading = false)
       )

@@ -79,7 +79,12 @@ export class ParkingEditSidebarComponent implements OnChanges {
       openTime: ['', Validators.required],
       closeTime: ['', Validators.required],
 
-      hourlyRate: [0, [Validators.required, Validators.min(0)]]
+      // 1. เปลี่ยนจาก hourlyRate เป็น role_prices (Group)
+      role_prices: this.fb.group({
+        Host: [0, [Validators.required, Validators.min(0)]],
+        User: [0, [Validators.required, Validators.min(0)]],
+        Visitor: [0, [Validators.required, Validators.min(0)]]
+      })
     });
   }
 
@@ -95,13 +100,22 @@ export class ParkingEditSidebarComponent implements OnChanges {
         isActive: false,   // 👈 ใส่ default boolean ชัด ๆ
         openTime: '',
         closeTime: '',
-        hourlyRate: 0
+        role_prices: {
+          Host: 0,
+          User: 0,
+          Visitor: 0
+        }
       });
       this.form.patchValue({
         ...data,
         isActive: !!data.isActive,  // 👈 บังคับ boolean
         openTime: data.openTime?.slice(0, 5),
         closeTime: data.closeTime?.slice(0, 5),
+        role_prices: {
+          Host: data.role_prices?.Host ?? 0,
+          User: data.role_prices?.User ?? 0,
+          Visitor: data.role_prices?.Visitor ?? 0
+        }
       });
     }
   }

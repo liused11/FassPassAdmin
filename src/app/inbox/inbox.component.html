@@ -139,14 +139,16 @@
           </td>
 
           <!-- ราคา -->
-          <td class="text-blue-500 font-medium">
-            <ng-container *ngIf="building.price === 0">
+          <!--<td class="text-blue-500 font-medium whitespace-pre-line">-->
+          <td style="white-space: pre-line;">
+            <!--<ng-container *ngIf="building.price === 0">
               ฿0
             </ng-container>
 
             <ng-container *ngIf="building.price > 0">
               ฿{{ building.price | number }} {{ building.priceInfo }}
-            </ng-container>
+            </ng-container>-->
+            {{ building.priceText }}
           </td>
 
           <!-- อัตรา -->

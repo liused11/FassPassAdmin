@@ -135,7 +135,8 @@ export class InboxComponent implements OnInit {
           detail: `เวลาเปิด-ปิด: ${b.open_time} - ${b.close_time}`,
           address: b.address,
           status: b.status,
-          price: b.price,
+          // ✅ เปลี่ยนตรงนี้
+          priceText: b.price_text,
           rate: b.rate,
           openTime: b.open_time,
           closeTime: b.close_time
@@ -265,9 +266,10 @@ export class InboxComponent implements OnInit {
       address: formData.address,
       open_time: formData.openTime,
       close_time: formData.closeTime,
-      price_value: formData.hourlyRate,
       is_active: formData.isActive,
-      images: formData.images ?? []
+      images: formData.images ?? [],
+      // ✅ เพิ่ม role_prices เข้าไป
+      role_prices: formData.role_prices
     };
 
     const originalBuilding = {
@@ -275,9 +277,10 @@ export class InboxComponent implements OnInit {
       address: this.originalBuilding.address,
       open_time: this.originalBuilding.openTime,
       close_time: this.originalBuilding.closeTime,
-      price_value: this.originalBuilding.hourlyRate,
       is_active: this.originalBuilding.isActive,
-      images: this.originalBuilding.images ?? []
+      images: this.originalBuilding.images ?? [],
+      // ✅ ดึงจากก้อนต้นฉบับที่เก็บไว้ตอน openEdit
+      role_prices: this.originalBuilding.role_prices
     };
         
     const entities: any[] = [];
@@ -318,9 +321,18 @@ export class InboxComponent implements OnInit {
       const originalValue = original[key];
       const editedValue = edited[key];
 
-      // compare array
+      // Compare array
       if (Array.isArray(originalValue) && Array.isArray(editedValue)) {
         if (JSON.stringify(originalValue.sort()) !== JSON.stringify(editedValue.sort())) {
+          changes[key] = editedValue;
+        }
+        return;
+      }
+       
+      // Compare Object / JSONB
+      if (typeof originalValue === 'object' && originalValue !== null && 
+          typeof editedValue === 'object' && editedValue !== null) {
+        if (JSON.stringify(originalValue) !== JSON.stringify(editedValue)) {
           changes[key] = editedValue;
         }
         return;

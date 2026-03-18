@@ -11,4 +11,11 @@ export interface ParkingEditSidebarModel {
   closeTime: string;
 
   hourlyRate: number;
+
+  // เพิ่มตัวนี้เข้าไป
+  role_prices?: {
+    Host: number;
+    User: number;
+    Visitor: number;
+  };
 }

@@ -41,6 +41,7 @@ export interface ContextInfo {
   device?: string;
   method?: string;
   verification?: string;
+  booking_type?: string;
 }
 
 export interface ResultInfo {

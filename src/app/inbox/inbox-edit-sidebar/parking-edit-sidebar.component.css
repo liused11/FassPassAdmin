@@ -283,6 +283,25 @@ textarea {
   border: none !important;
 }
 
+/* เพิ่มในไฟล์ .css */
+.price-grid {
+  display: flex;
+  flex-direction: column; /* เรียงลงมาข้างล่างเพื่อไม่ให้เบียดกันใน Sidebar */
+  gap: 16px;
+}
+
+.price-grid .field label {
+  color: #667085;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+/* ปรับความสูงของ InputNumber นิดหน่อยให้ดูเพรียวขึ้น */
+::ng-deep .p-inputnumber, 
+::ng-deep .p-inputnumber-input {
+  width: 100% !important;
+}
+
 
 
 

@@ -28,8 +28,9 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { createClient } from '@supabase/supabase-js';
 import { finalize } from 'rxjs/operators';
 import { SiteStateService } from '../service/site/site-state.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { timer, Subject } from 'rxjs';
+import { switchMap, takeUntil } from 'rxjs/operators';
+
 
 @Component({
   selector: 'app-dashboard',
@@ -217,11 +218,24 @@ export class DashboardComponent implements OnInit {
                 parsedMeta = null;
               }
             }
-            const entityInfo = parsedMeta?.entity ?? null;
+            let entityInfo = parsedMeta?.entity ?? null;
+
+            // ✅ fallback สำหรับ reservation
+            if (!entityInfo && a.entity_type === 'reservation') {
+              entityInfo = parsedNewData || parsedChanges || null;
+            }
 
             let contextInfo: any = null;
 
-            if (
+            if (parsedMeta?.context) {
+              contextInfo = parsedMeta.context;
+            }
+            else if (parsedNewData?.booking_type) {
+              contextInfo = {
+                booking_type: parsedNewData.booking_type
+              };
+            }
+            else if (
               parsedMeta?.location ||
               parsedMeta?.device ||
               parsedMeta?.method ||

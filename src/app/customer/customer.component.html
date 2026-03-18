@@ -1,3 +1,6 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
 <div
     class="flex flex-column md:flex-row gap-4 w-full p-3 md:p-4 surface-ground min-h-screen align-items-start relative">
     <div *ngIf="loading"
@@ -204,11 +207,20 @@
                         <td class="text-500 text-xs hidden md:table-cell">{{user.lastActive}}</td>
 
                         <td>
-                            <div class="flex gap-1">
+                            <div class="flex gap-2">
                                 <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" severity="info"
-                                    size="small"></p-button>
+                                    size="small" pTooltip="แก้ไขข้อมูล" tooltipPosition="top"
+                                    (onClick)="editUser(user)"></p-button>
+
+                                <p-button [icon]="user.status === 'Blacklist' ? 'pi pi-unlock' : 'pi pi-ban'"
+                                    [text]="true" [rounded]="true"
+                                    [severity]="getBlacklistSeverity(user.status)" size="small"
+                                    pTooltip="{{user.status === 'Blacklist' ? 'ปลดบล็อก' : 'Blacklist'}}"
+                                    tooltipPosition="top" (onClick)="toggleBlacklist(user)"></p-button>
+
                                 <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
-                                    size="small"></p-button>
+                                    size="small" pTooltip="ลบ" tooltipPosition="top"
+                                    (onClick)="deleteUser(user)"></p-button>
                             </div>
                         </td>
                     </tr>
@@ -217,3 +229,70 @@
         </div>
     </div>
 </div>
+
+<!-- Edit User Dialog -->
+<p-dialog [(visible)]="displayEditDialog" [header]="'แก้ไขข้อมูลผู้ใช้'" [modal]="true" [style]="{width: '450px'}"
+    [draggable]="false" [resizable]="false" styleClass="p-fluid customer-edit-dialog shadow-4">
+    <div class="grid formgrid p-2" *ngIf="editingUser">
+        <div class="field col-12 mb-4">
+            <div class="flex align-items-center gap-4 mb-4 p-3 surface-50 border-round-xl border-1 border-100">
+                <p-avatar [image]="editingUser.avatarUrl" [icon]="!editingUser.avatarUrl ? 'pi pi-user' : undefined"
+                    shape="circle" size="xlarge"
+                    [styleClass]="editingUser.category === 'Internal' ? 'bg-indigo-50 text-indigo-500 shadow-1' : 
+                                  editingUser.category === 'Hybrid' ? 'bg-purple-50 text-purple-500 shadow-1' : 
+                                  editingUser.category === 'External' ? 'bg-orange-50 text-orange-500 shadow-1' :
+                                  'bg-gray-50 text-gray-500 shadow-1'">
+                </p-avatar>
+                <div class="flex flex-column gap-1">
+                    <span class="text-xl font-bold text-900">{{editingUser.firstName}} {{editingUser.lastName}}</span>
+                    <span class="text-xs text-500 font-medium uppercase tracking-wider">{{editingUser.role || 'No Role Assigned'}}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="field col-12 md:col-6 mb-3">
+            <label for="firstName" class="block text-900 font-medium mb-2">ชื่อ</label>
+            <input pInputText id="firstName" [(ngModel)]="editingUser.firstName" placeholder="กรอกชื่อ"
+                class="p-inputtext-sm border-round-lg" />
+        </div>
+
+        <div class="field col-12 md:col-6 mb-3">
+            <label for="lastName" class="block text-900 font-medium mb-2">นามสกุล</label>
+            <input pInputText id="lastName" [(ngModel)]="editingUser.lastName" placeholder="กรอกนามสกุล"
+                class="p-inputtext-sm border-round-lg" />
+        </div>
+
+        <div class="field col-12 mb-3">
+            <label for="email" class="block text-900 font-medium mb-2">อีเมล</label>
+            <input pInputText id="email" [(ngModel)]="editingUser.email" placeholder="example@email.com"
+                class="p-inputtext-sm border-round-lg" />
+        </div>
+
+        <div class="field col-12 mb-3">
+            <label for="phone" class="block text-900 font-medium mb-2">เบอร์โทรศัพท์</label>
+            <input pInputText id="phone" [(ngModel)]="editingUser.phone" placeholder="08x-xxx-xxxx"
+                class="p-inputtext-sm border-round-lg" />
+        </div>
+
+        <div class="field col-12 mb-3">
+            <label for="company" class="block text-900 font-medium mb-2">บริษัท / องค์กร</label>
+            <input pInputText id="company" [(ngModel)]="editingUser.company" placeholder="ชื่อบริษัท"
+                class="p-inputtext-sm border-round-lg" />
+        </div>
+
+        <div class="field col-12 mb-3">
+            <label for="role" class="block text-900 font-medium mb-2">บทบาท</label>
+            <p-dropdown [options]="roleOptions" [(ngModel)]="editingUser.role" placeholder="เลือกบทบาท"
+                styleClass="w-full p-inputtext-sm border-round-lg"></p-dropdown>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-content-end gap-2 px-2 pb-2">
+            <p-button label="ยกเลิก" [text]="true" severity="secondary" (onClick)="displayEditDialog = false"
+                styleClass="p-button-sm font-semibold"></p-button>
+            <p-button label="บันทึกข้อมูล" severity="primary" size="small" (onClick)="saveUser()"
+                styleClass="px-4 border-round-lg shadow-2 font-semibold"></p-button>
+        </div>
+    </ng-template>
+</p-dialog>

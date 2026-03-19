@@ -5,6 +5,10 @@
             <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="4"></p-progressSpinner>
         </div>
 
+        <div class="fixed bottom-0 right-0 p-3" style="z-index: 100;">
+            <i class="pi pi-spin pi-sync text-200" *ngIf="!loading" pTooltip="Auto-syncing..."></i>
+        </div>
+
         <div class="grid grid-nogutter gap-3 md:gap-4">
             <div *ngFor="let metric of metrics" class="col-12 md:col-6 lg:col-3">
                 <p-card styleClass="h-full shadow-2 border-round-xl border-none">
@@ -20,7 +24,7 @@
                             class="w-3rem h-3rem border-round bg-gray-50 flex align-items-center justify-content-center border-1 border-100">
                             <i [class]="metric.icon" class="text-xl text-700"></i>
                         </div>
-                    </div>
+                    </div> 
                 </p-card>
             </div>
         </div>

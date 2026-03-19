@@ -25,7 +25,7 @@ import { SidebarModule } from 'primeng/sidebar';
 import { TooltipModule } from 'primeng/tooltip';
 import { TimelineModule } from 'primeng/timeline';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../supabase.config';
 import { finalize } from 'rxjs/operators';
 import { SiteStateService } from '../service/site/site-state.service';
 import { Subject } from 'rxjs';
@@ -48,11 +48,7 @@ import { takeUntil } from 'rxjs/operators';
   providers: [DashboardService]
 })
 export class DashboardComponent implements OnInit {
-  supabase = createClient(
-    'https://unxcjdypaxxztywplqdv.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
-  );
-
+  supabase = supabase; // ✅ Add this line to fix TS2304: Cannot find name 'supabase'
   metrics: Metric[] = [];
   allActivities: ActivityLog[] = [];
 
@@ -79,15 +75,9 @@ export class DashboardComponent implements OnInit {
 
   private destroy$ = new Subject<void>();
 
+  // ❌ ลบคำว่า async ออกได้เลย เพราะเราไม่ต้อง await แล้ว
   async ngOnInit() {
-    const { data } = await this.supabase.auth.getSession();
-    this.token = data.session?.access_token ?? null;
-
-    if (!this.token) {
-      console.error('No session');
-      return;
-    }
-
+    // 1. ติดตามการเปลี่ยน Site จาก Dropdown (ถ้าเปลี่ยนตึก ให้โหลดข้อมูลใหม่)
     this.siteStateService.site$
       .pipe(takeUntil(this.destroy$))
       .subscribe(siteId => {
@@ -95,8 +85,35 @@ export class DashboardComponent implements OnInit {
           this.loadDashboardData(siteId, this.token);
         }
       });
-  }
 
+    // 2. ดึง Session ปัจจุบันทันที (กรณีล็อกอินไว้อยู่แล้ว จะได้ไม่ต้องรอ)
+    const { data } = await supabase.auth.getSession();
+    if (data?.session) {
+      this.token = data.session.access_token;
+      const siteId = this.siteStateService.getCurrentSite();
+      if (siteId) {
+         this.loadDashboardData(siteId, this.token);
+      }
+    }
+
+    // 3. 💡 เกราะป้องกันชั้นที่ 2: นั่งรอฟัง Event 
+    // กรณีเพิ่งกด Magic Link เข้ามา Supabase จะใช้เวลาเสี้ยววินาทีในการแกะ URL 
+    // พอแกะเสร็จมันจะตะโกนบอกตรงนี้ เราก็คว้า Token ไปโหลดกราฟต่อเลย!
+    supabase.auth.onAuthStateChange((event, session) => {
+      // เช็คว่ามี Session และ Token ไม่ซ้ำกับของเดิม (ป้องกันการเรียกซ้ำซ้อน)
+      if (session && this.token !== session.access_token) {
+        console.log('✅ Session acquired via Event:', event);
+        this.token = session.access_token;
+        
+        const siteId = this.siteStateService.getCurrentSite();
+        if (siteId) {
+          this.loadDashboardData(siteId, this.token);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        this.token = null; // เคลียร์ Token ทิ้งถ้ากด Log out
+      }
+    });
+  }
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();

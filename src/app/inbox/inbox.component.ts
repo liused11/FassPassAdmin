@@ -1,7 +1,7 @@
 // app/inbox/inbox.component.ts
 import { ParkingEditSidebarComponent } from './inbox-edit-sidebar/parking-edit-sidebar.component';
 import { ParkingHistorySidebarComponent } from './inbox-history-sidebar/parking-history-sidebar.component';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -49,29 +49,29 @@ import { takeUntil } from 'rxjs/operators';
   templateUrl: './inbox.component.html',
   styleUrls: ['./inbox.component.css']
 })
-export class InboxComponent implements OnInit {
+export class InboxComponent implements OnInit, OnDestroy {
       
-
   supabase = createClient(
     'https://unxcjdypaxxztywplqdv.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
   );
+  
   sessionToken: string = '';
   originalBuilding: any = null;
   metrics: any[] = [];
+  
   buildings: any[] = [];
-
   selectedBuildings: any[] = [];
+
   loading: boolean = false;
       
-  sidebarEditVisible: boolean = false;       // ✅ ADD
+  sidebarEditVisible: boolean = false;
   sidebarHistoryVisible: boolean = false;
-  selectedBuilding: any = null;          // ✅ ADD
+  selectedBuilding: any = null;
 
   historyList: ParkingHistoryItem[] = [];
   historyOffset = 0;
   historyLimit = 5;
-      
 
   constructor(
     private parkingService: ParkingService,
@@ -81,28 +81,30 @@ export class InboxComponent implements OnInit {
   private refreshInterval: any;
   private currentSiteId: string = 'all';
   private destroy$ = new Subject<void>();
+
   async ngOnInit() {
-    this.loading = true; // Start loading
+    this.loading = true;
     const { data } = await this.supabase.auth.getSession();
     const token = data.session?.access_token
     if (!token) {
       console.error('No session');
+      this.loading = false;
       return;
     }
 
-    this.sessionToken = token; // ✅ เก็บไว
+    this.sessionToken = token; 
         
     // subscribe site
     this.siteState.site$
       .pipe(takeUntil(this.destroy$))
       .subscribe(site => {
         this.currentSiteId = site;
-        this.loadDashboard(token, site);
+        this.loadDashboard(site); // ✅ ลบ token ออก
       });
 
     // auto refresh
     this.refreshInterval = setInterval(() => {
-      this.loadDashboard(token, this.currentSiteId);
+      this.loadDashboard(this.currentSiteId); // ✅ ลบ token ออก
     }, 10000);
   }
 
@@ -114,15 +116,22 @@ export class InboxComponent implements OnInit {
     }
   }
 
+  async loadDashboard(siteId: string) {
+    // ✅ ดึง Token ใหม่เสมอ ป้องกัน 401 Unauthorized
+    const { data: { session } } = await this.supabase.auth.getSession();
+    const currentToken = session?.access_token;
 
-  async loadDashboard(token: string, siteId: string) {
+    if (!currentToken) {
+      console.warn('ไม่พบ Session หรือ Token หมดอายุ');
+      this.loading = false;
+      return;
+    }
 
-    this.parkingService.getDashboard(token, siteId)
+    this.parkingService.getDashboard(currentToken, siteId)
       .subscribe(res => {
-        console.log(res);
+        console.log('📌 ข้อมูลจาก API:', res);
 
         this.metrics = res.metrics ?? [];
-
         const summary = res.parking_summary ?? [];
 
         this.buildings = summary.map((b: any) => ({
@@ -131,39 +140,37 @@ export class InboxComponent implements OnInit {
           images: b.images ?? [],
           available: b.total - b.used,
           total: b.total,
-          types: b.types ?? [],  // ประเภท
+          types: b.types ?? [],  
           detail: `เวลาเปิด-ปิด: ${b.open_time} - ${b.close_time}`,
           address: b.address,
           status: b.status,
-          price: b.price,
+          price: b.price, // ✅ ใช้ b.price ที่ดึงค่ามาจาก role_price ฝั่ง Backend
           rate: b.rate,
           openTime: b.open_time,
           closeTime: b.close_time
         }));
-        this.loading = false; // Stop loading
+        
+        this.loading = false;
       }, err => {
-        console.error(err);
+        console.error('API Error:', err);
         this.loading = false;
       });
   }
 
   async openEdit(building: any) { 
-
     this.sidebarEditVisible = true;
     this.loading = true;
     this.selectedBuilding = null;
 
     const {data: { session }} = await this.supabase.auth.getSession();
-
     const token = session?.access_token;
         
-
     this.parkingService
       .getBuildingById(building.id, token!)
       .subscribe({
         next: (res: any) => { 
           this.selectedBuilding = res.data; 
-          this.originalBuilding = JSON.parse(JSON.stringify(res.data)); // clone กัน reference
+          this.originalBuilding = JSON.parse(JSON.stringify(res.data));
           this.loading = false; 
         },
         error: (err) => { 
@@ -183,8 +190,8 @@ export class InboxComponent implements OnInit {
 
     this.loadHistory();
   }
+  
   loadHistory(loadMore = false) {
-
     if (!this.selectedBuilding) return;
 
     this.loading = true;
@@ -205,7 +212,6 @@ export class InboxComponent implements OnInit {
       )
       .subscribe({
         next: (res) => {
-
           const mapped = res.data.map((item: any) => ({
             id: item.id,
             logType: item.log_type,
@@ -254,7 +260,6 @@ export class InboxComponent implements OnInit {
   }
 
   async handleSave(formData: any) {
-
     const { data: { session } } = await this.supabase.auth.getSession();
     const token = session?.access_token;
     if (!token|| !this.originalBuilding) return;
@@ -265,7 +270,7 @@ export class InboxComponent implements OnInit {
       address: formData.address,
       open_time: formData.openTime,
       close_time: formData.closeTime,
-      price_value: formData.hourlyRate,
+      role_price: formData.hourlyRate, // ✅ แก้เป็น role_price เผื่อไว้ (ขึ้นอยู่กับฝั่ง Backend รับค่าอะไร)
       is_active: formData.isActive,
       images: formData.images ?? []
     };
@@ -275,7 +280,7 @@ export class InboxComponent implements OnInit {
       address: this.originalBuilding.address,
       open_time: this.originalBuilding.openTime,
       close_time: this.originalBuilding.closeTime,
-      price_value: this.originalBuilding.hourlyRate,
+      role_price: this.originalBuilding.hourlyRate, // ✅ สอดคล้องกับด้านบน
       is_active: this.originalBuilding.isActive,
       images: this.originalBuilding.images ?? []
     };
@@ -290,35 +295,32 @@ export class InboxComponent implements OnInit {
       editedBuilding
     );
 
-    // 🔥 ถ้าไม่มีอะไรเปลี่ยน ไม่ต้องยิง API
     if (entities.length === 0) {
       this.sidebarEditVisible = false;
       return;
     }
-
 
     this.parkingService
       .updateEntities(entities, token)
       .subscribe({
         next: () => {
           this.sidebarEditVisible = false;
-          this.loadDashboard(token, this.currentSiteId);
+          this.loadDashboard(this.currentSiteId); // ✅ ลบ token ออก
         },
         error: (err) => {
           console.error('Update failed:', err);
-          console.error(err.error);   // 👈 เพิ่มบรรทัดนี้
+          console.error(err.error);   
         }
       });
   }
+  
   getChangedFields(original: any, edited: any) {
     const changes: any = {};
 
     Object.keys(edited).forEach(key => {
-          
       const originalValue = original[key];
       const editedValue = edited[key];
 
-      // compare array
       if (Array.isArray(originalValue) && Array.isArray(editedValue)) {
         if (JSON.stringify(originalValue.sort()) !== JSON.stringify(editedValue.sort())) {
           changes[key] = editedValue;
@@ -332,6 +334,7 @@ export class InboxComponent implements OnInit {
 
     return changes;
   }
+  
   getSeverity(status: string) {
     switch (status) {
       case 'ใช้งานอยู่': return 'success';

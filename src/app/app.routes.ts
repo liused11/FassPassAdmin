@@ -10,11 +10,12 @@ import { CardComponent } from './card/card.component';
 import { VideoComponent } from './video/video.component';
 import { StarComponent } from './inbox/star/star.component';
 import { FloorPlanViewerComponent } from './floor-plan-viewer.componentfloor-plan-viewer/floor-plan-viewer/floor-plan-viewer.component';
-
+import { LoginComponent } from './login/login.component';
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'chat', component: ChatComponent },
+  { path: 'login', component: LoginComponent },
   {
     path: 'buildings',
     component: InboxComponent,

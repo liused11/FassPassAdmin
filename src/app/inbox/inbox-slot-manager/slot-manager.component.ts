@@ -62,7 +62,8 @@ export class SlotManagerComponent implements OnChanges {
 
   showSidebar = false;
   refreshInterval: ReturnType<typeof setInterval> | null = null;
-  selectedSlotIds = new Set<string>();
+  //selectedSlotIds = new Set<string>();
+  selectedSlotId: string | null = null;
 
   constructor(
     private parkingService: ParkingService,
@@ -155,7 +156,7 @@ export class SlotManagerComponent implements OnChanges {
             name: slot.name,
             status: slot.status,             // DB
             current_status: slot.current_status ?? slot.status,
-            selected: this.selectedSlotIds.has(slot.id)
+            selected: slot.id === this.selectedSlotId
         }))
         }))
     }));
@@ -172,7 +173,7 @@ export class SlotManagerComponent implements OnChanges {
     this.searchText = '';
   }
   clearSelection() {
-    this.selectedSlotIds.clear();
+    this.selectedSlotId = null;
 
     this.floors.forEach(f =>
       f.zones.forEach(z =>
@@ -186,11 +187,13 @@ export class SlotManagerComponent implements OnChanges {
       return;
     }
 
-    if (this.selectedSlotIds.has(slot.id)) {
-      this.selectedSlotIds.delete(slot.id);
+    if (this.selectedSlotId === slot.id) {
+      this.selectedSlotId = null;
       slot.selected = false;
     } else {
-      this.selectedSlotIds.add(slot.id);
+      // ถ้าเลือกช่องใหม่ ให้เคลียร์การเลือกช่องเก่าทิ้งก่อน
+      this.clearSelection();
+      this.selectedSlotId = slot.id;
       slot.selected = true;
     }
   }
@@ -199,7 +202,7 @@ export class SlotManagerComponent implements OnChanges {
 
     return this.selectedFloor.zones
       .flatMap(z => z.slots)
-      .filter(slot => this.selectedSlotIds.has(slot.id));
+      .filter(slot => slot.id === this.selectedSlotId);
   }
 
   openDialog() {

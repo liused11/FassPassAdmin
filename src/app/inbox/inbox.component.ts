@@ -267,7 +267,7 @@ export class InboxComponent implements OnInit {
       open_time: formData.openTime,
       close_time: formData.closeTime,
       is_active: formData.isActive,
-      images: formData.images ?? [],
+      images: formData.images ?? [], // เก็บ URL รูปภาพ
       // ✅ เพิ่ม role_prices เข้าไป
       role_prices: formData.role_prices
     };
@@ -275,9 +275,9 @@ export class InboxComponent implements OnInit {
     const originalBuilding = {
       name: this.originalBuilding.name,
       address: this.originalBuilding.address,
-      open_time: this.originalBuilding.openTime,
-      close_time: this.originalBuilding.closeTime,
-      is_active: this.originalBuilding.isActive,
+      open_time: this.originalBuilding.open_time || this.originalBuilding.openTime,
+      close_time: this.originalBuilding.close_time || this.originalBuilding.closeTime,
+      is_active: this.originalBuilding.is_active ?? this.originalBuilding.isActive,
       images: this.originalBuilding.images ?? [],
       // ✅ ดึงจากก้อนต้นฉบับที่เก็บไว้ตอน openEdit
       role_prices: this.originalBuilding.role_prices
@@ -299,7 +299,7 @@ export class InboxComponent implements OnInit {
       return;
     }
 
-
+    this.loading = true; // แสดง loading ขณะบันทึก
     this.parkingService
       .updateEntities(entities, token)
       .subscribe({
@@ -308,6 +308,7 @@ export class InboxComponent implements OnInit {
           this.loadDashboard(token, this.currentSiteId);
         },
         error: (err) => {
+          this.loading = false;
           console.error('Update failed:', err);
           console.error(err.error);   // 👈 เพิ่มบรรทัดนี้
         }

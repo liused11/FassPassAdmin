@@ -50,6 +50,15 @@ export interface ResultInfo {
   time?: string;
 }
 
+export interface LogDisplay {
+  icon: string;
+  title: string;
+  subtitle: string;
+  attributes: { label: string; value: any; color: string }[];
+  contexts: { label: string; value: any }[];
+  hasChanges: boolean;
+}
+
 export interface ActivityLog {
   id: number;
   logType: 'revision' | 'activity';
@@ -62,17 +71,14 @@ export interface ActivityLog {
 
   entityId?: string;
   entityType?:string;
-  
   detail?: string;
 
-  entityInfo?: EntityInfo | null;
-  contextInfo?: ContextInfo | null;
-  resultInfo?: ResultInfo | null;
-
   revisionRows?: RevisionRow[] | null;
-  meta?: Meta | null;
+  meta?: any | null;
   schedule?: any; 
   changes?: any;   // ✅ ADD
+
+  logDisplay?: LogDisplay;  
 }
 
 export interface Reservation {

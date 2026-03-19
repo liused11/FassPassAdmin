@@ -1,12 +1,12 @@
 // app/dashboard/dashboard.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 
 // ✅ Fix Imports: Ensure these point to the files created above
 import { DashboardService } from '../service/dashboard.service';
-import { ActivityLog, Metric } from '../models/dashboard.model';
+import { ActivityLog, Metric,LogDisplay } from '../models/dashboard.model';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -48,7 +48,7 @@ import { switchMap, takeUntil } from 'rxjs/operators';
   // but keeping it here is fine too.
   providers: [DashboardService]
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   supabase = createClient(
     'https://unxcjdypaxxztywplqdv.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
@@ -259,7 +259,29 @@ export class DashboardComponent implements OnInit {
               time: a.time
             };
 
-            return {
+            const mappedLog = {
+              id: a.id,
+              time: a.time,
+              type: a.entity_type || a.action,
+              action: a.action,
+              category: a.category,
+              status: a.status,
+              logType: a.log_type,
+              user: a.user_name,
+              entityId: a.entity_id,
+              entityType: a.entity_type,
+              detail: a.detail,
+              revisionRows, // ตัวแปรที่คุณ Parse ไว้
+              meta: parsedMeta, // ตัวแปรที่คุณ Parse ไว้
+              schedule: parsedNewData,
+              changes: parsedChanges
+            } as ActivityLog;
+
+            // 🌟 ทำการ "ย่อยข้อมูล" ก่อนส่งให้ HTML ทันที
+            mappedLog.logDisplay = this.transformLogForDisplay(mappedLog);
+
+            return mappedLog;
+            /*{
               id: a.id,
               time: a.time,
               type: a.entity_type || a.action,
@@ -282,13 +304,71 @@ export class DashboardComponent implements OnInit {
               meta: parsedMeta,
               schedule: parsedNewData,
               changes: parsedChanges   // ✅ ADD THIS
-            };
+            };*/
           });
         },
         error: (err: any) => {
           console.error('Failed to load activities', err);
         }
       });
+  }
+
+  // ==========================================
+  // 🌟 THE TRANSFORMER: ฟังก์ชันย่อยข้อมูลสำหรับ UI
+  // ==========================================
+  private transformLogForDisplay(log: ActivityLog): LogDisplay {
+    const d: LogDisplay = {
+      title: this.formatAction(log.action),
+      subtitle: this.formatEntity(log.entityType),
+      icon: this.getActivityIcon(log.type),
+      attributes: [],
+      contexts: [],
+      hasChanges: log.logType === 'revision' && !!log.revisionRows?.length
+    };
+
+    const entity = log.meta?.entity || {};
+    const context = log.meta?.context || {};
+
+    // 1. จัดการ Attributes หลัก (จาก meta.entity)
+    Object.keys(entity).forEach(key => {
+      // ข้ามบาง key ที่ซ้ำซ้อน
+      if (key === 'type' && log.entityType !== 'slots') return; 
+      
+      let val = entity[key];
+      let color = '';
+
+      // ตกแต่งสีให้ Status
+      if (['status', 'status_to', 'current_status', 'set_status'].includes(key)) {
+        color = this.getTextColorForStatus(val);
+        val = String(val).toUpperCase().replace(/_/g, ' ');
+      }
+      
+      // ตกแต่งสีให้ Action Label
+      if (key === 'action_label') {
+        val = String(val).replace(/_/g, ' ');
+        color = val.includes('REMOVE') ? 'text-red-600 font-bold' : 'text-green-600 font-bold';
+      }
+
+      d.attributes.push({ label: this.formatLabel(key), value: val, color });
+    });
+
+    // 2. จัดการ Context (จาก meta.context)
+    Object.keys(context).forEach(key => {
+      let val = context[key];
+      // ทำให้เวลาอ่านง่ายขึ้น (ถ้าเป็น ISO String)
+      if (typeof val === 'string' && val.includes('T') && val.includes('+00:00')) {
+        const date = new Date(val);
+        val = date.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+      }
+      d.contexts.push({ label: this.formatLabel(key), value: val });
+    });
+
+    // 3. Fallback เผื่อไม่มี Meta
+    if (d.attributes.length === 0 && log.detail) {
+      d.attributes.push({ label: 'Detail', value: log.detail, color: '' });
+    }
+
+    return d;
   }
 
   get normalActivities() {
@@ -319,6 +399,31 @@ export class DashboardComponent implements OnInit {
       case 'Access': return 'pi pi-ban';
       default: return 'pi pi-info-circle';
     }
+  }
+
+  // Helper แปลง Key เป็นคำสวยๆ
+  private formatLabel(key: string): string {
+    const customLabels: Record<string, string> = {
+      plate: 'Plate', slot: 'Slot ID', floor: 'Floor', vehicle_type: 'Vehicle Type',
+      status_to: 'New Status', status_from: 'Previous', status: 'Status',
+      start_time: 'Start Time', end_time: 'End Time', booking_type: 'Booking Type',
+      color: 'Color', model: 'Model', province: 'Province', action_label: 'Action',
+      current_status: 'Current Status', reason: 'Reason', duration: 'Duration',
+      target_date: 'Target Date', period: 'Period', set_status: 'Set Status'
+    };
+    if (customLabels[key]) return customLabels[key];
+    
+    // ถ้าไม่มีใน List ให้ตัด Underscore แล้วทำเป็น Title Case
+    return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  private getTextColorForStatus(status: string): string {
+    if (!status) return '';
+    const s = String(status).toLowerCase();
+    if (s.includes('success') || s.includes('confirm') || s.includes('available')) return 'text-green-600 font-bold';
+    if (s.includes('cancel') || s.includes('delete') || s.includes('remove') || s.includes('denied')) return 'text-red-600 font-bold';
+    if (s.includes('maintenance') || s.includes('pending')) return 'text-orange-600 font-bold';
+    return 'text-blue-600 font-bold';
   }
   formatAction(action?: string): string {
     if (!action) return '';

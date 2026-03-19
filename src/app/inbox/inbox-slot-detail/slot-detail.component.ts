@@ -69,12 +69,22 @@ export class SlotDetailComponent {
   ngOnChanges() {
 
     if (this.slots.length && this.originalMainStatus === null) {
+      // 1. นำชื่อจาก slot ที่ถูกส่งเข้ามา (เช่น 'A-23') มาใส่คำว่า 'Slot ' นำหน้า
+      this.slotName = 'Slot ' + this.slots[0].name; 
+      
+      // 2. ดึงสถานะของช่องนั้นมาตั้งค่า
       this.originalMainStatus = this.slots[0].status;
       this.selectedMainStatus = this.slots[0].status;
+      
+      // 3. รีเซ็ตตัวแปรโหลดเวลา เพื่อให้มันโหลดข้อมูลใหม่เสมอเมื่อเปลี่ยนช่อง
+      this.lastLoadedDate = undefined; 
     }
 
     if (!this.selectedDate) {
       this.selectedDate = this.formatLocalDate(new Date());
+      this.loadSchedule();
+    }else{
+      // โหลด Schedule ใหม่สำหรับช่องจอดนี้
       this.loadSchedule();
     }
   }

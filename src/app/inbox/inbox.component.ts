@@ -22,7 +22,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ParkingHistoryItem } from '../models/parking-history.model';
 import { SiteStateService } from '../service/site/site-state.service';
-import { Subject } from 'rxjs';
+import { Subject, timeout, catchError, of } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
     
 @Component({
@@ -78,6 +78,7 @@ export class InboxComponent implements OnInit {
   historyList: ParkingHistoryItem[] = [];
   historyOffset = 0;
   historyLimit = 5;
+  errorMessage: string | null = null;
       
 
   constructor(
@@ -109,7 +110,9 @@ export class InboxComponent implements OnInit {
 
     // auto refresh
     this.refreshInterval = setInterval(() => {
-      this.loadDashboard(token, this.currentSiteId);
+      if (!this.errorMessage) {
+        this.loadDashboard(token, this.currentSiteId);
+      }
     }, 10000);
   }
 
@@ -125,8 +128,30 @@ export class InboxComponent implements OnInit {
   async loadDashboard(token: string, siteId: string) {
 
     this.parkingService.getDashboard(token, siteId)
+      .pipe(
+        timeout(10000), // ⛔ กัน hang
+        catchError((err) => {
+
+          console.error(err);
+
+          if (err.name === 'TimeoutError') {
+            this.errorMessage = '⏱️ เซิร์ฟเวอร์ตอบช้าเกินไป';
+          } else if (!navigator.onLine) {
+            this.errorMessage = '🌐 ไม่มีอินเทอร์เน็ต';
+          } else {
+            this.errorMessage = '⚠️ โหลดข้อมูลไม่สำเร็จ';
+          }
+
+          this.loading = false;
+
+          return of(null); // ❗ สำคัญ
+        })
+      )
       .subscribe(res => {
+        if (!res) return;
         console.log(res);
+        
+        this.errorMessage = null; // ✅ clear เฉพาะ success
 
         this.metrics = res.metrics ?? [];
 
@@ -174,6 +199,13 @@ export class InboxComponent implements OnInit {
 
   get totalLocationsCount() {
     return this.buildings.length;
+  }
+  
+  retry() {
+    this.errorMessage = null;
+    this.loading = true;
+
+    this.loadDashboard(this.sessionToken, this.currentSiteId);
   }
 
   async openEdit(building: any) { 

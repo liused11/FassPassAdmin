@@ -28,8 +28,10 @@ import { createClient } from '@supabase/supabase-js';
 import { SiteStateService } from '../service/site/site-state.service';
 
 // ✅ เพิ่ม Import สำหรับ RxJS Timer
-import { timer, Subject, Subscription } from 'rxjs';
-import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { timer, Subject, Subscription, of } from 'rxjs';
+import { switchMap, takeUntil, tap, timeout, catchError, finalize } from 'rxjs/operators';
+
+
 
 @Component({
   selector: 'app-dashboard',
@@ -60,6 +62,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   selectedUserHistory: ActivityLog[] = [];
   currentUser: string = '';
   loading: boolean = false;
+  errorMessage: string | null = null;
 
   // ✅ ตัวแปรสำหรับจัดการ Auto Refresh
   private refreshSub?: Subscription;
@@ -118,13 +121,32 @@ export class DashboardComponent implements OnInit, OnDestroy {
             dateStr = `${year}-${month}-${day}`;
           }
           // คืนค่า Observable ของ Request (ยังไม่ subscribe ตรงนี้)
-          return this.dashboardService.getAllActivities(dateStr, siteId, this.token!);
+          return this.dashboardService.getAllActivities(dateStr, siteId, this.token!).pipe(
+            timeout(10000),
+            catchError(err => {
+              if (err.name === 'TimeoutError') {
+                this.errorMessage = '⏱️ โหลดข้อมูลไม่สำเร็จ (เซิร์ฟเวอร์ไม่ตอบ)';
+              } else if (err.status === 0) {
+                this.errorMessage = '🌐 ไม่สามารถเชื่อมต่ออินเทอร์เน็ต';
+              } else {
+                this.errorMessage = '⚠️ ระบบมีปัญหา';
+              }
+
+              return of(null);
+            }),
+            finalize(() => {
+              this.loading = false;
+            })
+          );
         })
       )
       .subscribe({
         next: (res: any) => {
-          this.processResponse(res); // นำข้อมูลไปแปลงรูปร่าง
-          this.loading = false;      // ปิด Loading
+          if (res) {
+            this.errorMessage = null;   // ✅ clear เฉพาะตอน success
+            this.processResponse(res);
+          }
+          this.loading = false;
         },
         error: (err) => {
           console.error('Polling error:', err);

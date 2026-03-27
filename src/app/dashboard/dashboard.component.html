@@ -2,11 +2,50 @@
         <div *ngIf="loading"
             class="fixed top-0 left-0 w-full h-full flex align-items-center justify-content-center bg-white-alpha-70"
             style="z-index: 9999;">
-            <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="4"></p-progressSpinner>
+            <p-progressSpinner styleClass="w-4rem hข-4rem" strokeWidth="4"></p-progressSpinner>
+        </div>
+
+        <!-- ❌ ERROR OVERLAY -->
+        <div *ngIf="errorMessage && !loading"
+            class="fixed top-0 left-0 w-full h-full flex align-items-center justify-content-center bg-white-alpha-70"
+            style="z-index: 9998;">
+
+            <div class="surface-card shadow-3 border-round-xl p-4 text-center w-11 md:w-25rem">
+                
+                <i class="pi pi-exclamation-triangle text-4xl text-red-500 mb-3"></i>
+                
+                <div class="text-xl font-bold text-800 mb-2">
+                    เกิดปัญหาในการโหลดข้อมูล
+                </div>
+
+                <div class="text-600 mb-4">
+                    {{ errorMessage }}
+                </div>
+
+                <div class="flex gap-2 justify-content-center">
+                    <p-button 
+                        label="ลองใหม่"
+                        icon="pi pi-refresh"
+                        (click)="errorMessage = null; startAutoRefresh(selectedSite)">
+                    </p-button>
+
+                    <p-button 
+                        label="ปิด"
+                        icon="pi pi-times"
+                        severity="secondary"
+                        [text]="true"
+                        (click)="errorMessage = null">
+                    </p-button>
+                </div>
+
+            </div>
         </div>
 
         <div class="fixed bottom-0 right-0 p-3" style="z-index: 100;">
-            <i class="pi pi-spin pi-sync text-200" *ngIf="!loading" pTooltip="Auto-syncing..."></i>
+            <i class="pi pi-spin pi-sync text-200"
+                *ngIf="!loading && !errorMessage"
+                pTooltip="Auto-syncing...">
+            </i>
         </div>
 
         <div class="grid grid-nogutter gap-3 md:gap-4">

@@ -122,7 +122,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           }
           // คืนค่า Observable ของ Request (ยังไม่ subscribe ตรงนี้)
           return this.dashboardService.getAllActivities(dateStr, siteId, this.token!).pipe(
-            timeout(10000),
+            timeout(15000),
             catchError(err => {
               if (err.name === 'TimeoutError') {
                 this.errorMessage = '⏱️ โหลดข้อมูลไม่สำเร็จ (เซิร์ฟเวอร์ไม่ตอบ)';
@@ -326,7 +326,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       let val = entity[key];
       let color = '';
 
-      if (['status', 'status_to', 'current_status', 'set_status'].includes(key)) {
+      if (['status', 'status_to', 'status_from', 'current_status', 'set_status'].includes(key)) {
         color = this.getTextColorForStatus(val);
         val = String(val).toUpperCase().replace(/_/g, ' ');
       }

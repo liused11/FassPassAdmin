@@ -23,6 +23,46 @@
     </div>
   </div>
 
+  <!-- รายการสถานที่ -->
+  <div class="w-full bg-white p-4 border-round-xl shadow-1 border-1 border-100">
+    <h3 class="text-lg font-bold text-gray-800 mb-4">รายการสถานที่</h3>
+    <div class="grid grid-nogutter gap-3">
+      <!-- รายการที่จอดรถ -->
+      <div class="col-12 md:col-6 p-2">
+        <p-card (click)="selectedMode='parking'" [styleClass]="selectedMode === 'parking' ? 'shadow-3 border-blue-300' : 'shadow-1'" styleClass="border-none h-full border-round-xl cursor-pointer">
+          <div class="flex align-items-center justify-content-between">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-car text-xl text-blue-600"></i>
+              <div>
+                <span class="block text-500 font-medium">รายการที่จอดรถ</span>
+              </div>
+            </div>
+            <div class="w-2rem h-2rem border-round bg-blue-50 flex align-items-center justify-content-center border-1 border-blue-200">
+              <span class="font-bold text-blue-600">{{ parkingLocationsCount }}</span>
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <!-- รายการอาคารผู้เยี่ยมชม -->
+      <div class="col-12 md:col-6 p-2">
+        <p-card (click)="selectedMode='visitor'" [styleClass]="selectedMode === 'visitor' ? 'shadow-3 border-purple-300' : 'shadow-1'" styleClass="border-none h-full border-round-xl cursor-pointer">
+          <div class="flex align-items-center justify-content-between">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-building text-xl text-purple-600"></i>
+              <div>
+                <span class="block text-500 font-medium">รายการอาคารผู้เยี่ยมชม</span>
+              </div>
+            </div>
+            <div class="w-2rem h-2rem border-round bg-purple-50 flex align-items-center justify-content-center border-1 border-purple-200">
+              <span class="font-bold text-purple-600">{{ visitorLocationsCount }}</span>
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </div>
+
   <div
     class="w-full bg-white p-3 border-round-xl shadow-1 border-1 border-100 flex flex-wrap align-items-center justify-content-between gap-3">
     <div class="flex flex-wrap align-items-center gap-2">
@@ -31,6 +71,8 @@
       <p-dropdown [options]="[]" placeholder="สถานะ" styleClass="p-inputtext-sm w-10rem"></p-dropdown>
       <p-dropdown [options]="[]" placeholder="ราคา" styleClass="p-inputtext-sm w-8rem"></p-dropdown>
       <p-dropdown [options]="[]" placeholder="เรียงตาม" styleClass="p-inputtext-sm w-8rem"></p-dropdown>
+      <!-- mode dropdown ถูกซ่อนไว้ เพราะใช้การ์ดคลิกแทน -->
+      <div class="text-sm text-500">คลิกการ์ดด้านล่างเพื่อเปลี่ยนรายการ</div>
       <p-button label="ตัวกรอง" icon="pi pi-filter" severity="primary" size="small"></p-button>
     </div>
   </div>
@@ -51,7 +93,7 @@
       </p-iconField>
     </div>
 
-    <p-table [value]="buildings" [(selection)]="selectedBuildings" [paginator]="true" [rows]="10"
+    <p-table [value]="filteredBuildings" [(selection)]="selectedBuildings" [paginator]="true" [rows]="10"
       styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
         <tr class="bg-gray-50 text-gray-600 text-sm">

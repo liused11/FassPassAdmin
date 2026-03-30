@@ -61,6 +61,13 @@ export class InboxComponent implements OnInit {
   metrics: any[] = [];
   buildings: any[] = [];
 
+  // ฟิลเตอร์โหมด (เริ่มต้นเป็นรายการที่จอดรถ)
+  selectedMode: 'parking' | 'visitor' = 'parking';
+  modeOptions = [
+    { label: 'รายการที่จอดรถ', value: 'parking' },
+    { label: 'รายการอาคารผู้เยี่ยมชม', value: 'visitor' }
+  ];
+
   selectedBuildings: any[] = [];
   loading: boolean = false;
       
@@ -141,6 +148,8 @@ export class InboxComponent implements OnInit {
           openTime: b.open_time,
           closeTime: b.close_time
         }));
+
+        // ไม่เพิ่มอาคารผู้เยี่ยมชมแบบ static เพื่อใช้ data จาก backend ตามจริง
         this.loading = false; // Stop loading
       }, err => {
         console.error(err);
@@ -148,16 +157,32 @@ export class InboxComponent implements OnInit {
       });
   }
 
-  async openEdit(building: any) { 
+  get filteredBuildings() {
+    if (this.selectedMode === 'visitor') {
+      return this.buildings.filter(b => b.name?.trim() === 'อาคาร 12 ชั้น (ตึกโหล)');
+    }
+    return this.buildings.filter(b => b.name?.trim() !== 'อาคาร 12 ชั้น (ตึกโหล)');
+  }
 
+  get parkingLocationsCount() {
+    return this.buildings.filter(b => b.name?.trim() !== 'อาคาร 12 ชั้น (ตึกโหล)').length;
+  }
+
+  get visitorLocationsCount() {
+    return this.buildings.filter(b => b.name?.trim() === 'อาคาร 12 ชั้น (ตึกโหล)').length;
+  }
+
+  get totalLocationsCount() {
+    return this.buildings.length;
+  }
+
+  async openEdit(building: any) { 
     this.sidebarEditVisible = true;
     this.loading = true;
     this.selectedBuilding = null;
 
     const {data: { session }} = await this.supabase.auth.getSession();
-
     const token = session?.access_token;
-        
 
     this.parkingService
       .getBuildingById(building.id, token!)
@@ -168,8 +193,8 @@ export class InboxComponent implements OnInit {
           this.loading = false; 
         },
         error: (err) => { 
-            console.error('Error fetching building:', err); 
-            this.loading = false; 
+          console.error('Error fetching building:', err); 
+          this.loading = false; 
         }    
       }); 
   }

@@ -79,6 +79,7 @@ export class InboxComponent implements OnInit {
   historyOffset = 0;
   historyLimit = 5;
   errorMessage: string | null = null;
+  editError: string | null = null;
       
 
   constructor(
@@ -136,7 +137,7 @@ export class InboxComponent implements OnInit {
 
           if (err.name === 'TimeoutError') {
             this.errorMessage = '⏱️ เซิร์ฟเวอร์ตอบช้าเกินไป';
-          } else if (!navigator.onLine) {
+          } else if (err.status === 0) {
             this.errorMessage = '🌐 ไม่มีอินเทอร์เน็ต';
           } else {
             this.errorMessage = '⚠️ โหลดข้อมูลไม่สำเร็จ';
@@ -176,11 +177,9 @@ export class InboxComponent implements OnInit {
 
         // ไม่เพิ่มอาคารผู้เยี่ยมชมแบบ static เพื่อใช้ data จาก backend ตามจริง
         this.loading = false; // Stop loading
-      }, err => {
-        console.error(err);
-        this.loading = false;
       });
   }
+
 
   get filteredBuildings() {
     if (this.selectedMode === 'visitor') {
@@ -211,6 +210,7 @@ export class InboxComponent implements OnInit {
   async openEdit(building: any) { 
     this.sidebarEditVisible = true;
     this.loading = true;
+    this.editError = null;   // ✅ reset
     this.selectedBuilding = null;
 
     const {data: { session }} = await this.supabase.auth.getSession();
@@ -218,16 +218,28 @@ export class InboxComponent implements OnInit {
 
     this.parkingService
       .getBuildingById(building.id, token!)
+      .pipe(
+        timeout(8000),
+        catchError((err) => {
+          if (err.name === 'TimeoutError') {
+            this.editError = 'timeout';
+          } else if (err.status === 0) {
+            this.editError = 'network';
+          } else {
+            this.editError = 'server';
+          }
+
+          this.loading = false;
+          return of(null);
+        })
+      )
       .subscribe({
         next: (res: any) => { 
           this.selectedBuilding = res.data; 
           this.originalBuilding = JSON.parse(JSON.stringify(res.data)); // clone กัน reference
           this.loading = false; 
-        },
-        error: (err) => { 
-          console.error('Error fetching building:', err); 
-          this.loading = false; 
-        }    
+ 
+        }   
       }); 
   }
 

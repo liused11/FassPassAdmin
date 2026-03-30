@@ -1,5 +1,6 @@
+// slot-status.model.ts
 export type SlotStatus =
-  | 'available'
-  | 'reserved'
-  | 'occupied'
-  | 'maintenance'
+  | 'available'   // ว่าง
+  | 'reserved'    // จองแล้ว
+  | 'occupied'    // มีรถจอดอยู่
+  | 'maintenance' // ปิดปรับปรุง

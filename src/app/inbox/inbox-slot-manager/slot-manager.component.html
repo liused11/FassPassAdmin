@@ -1,4 +1,10 @@
 <!-- slot-manager.component.html -->
+
+<div *ngIf="error" class="error-box">
+  <div *ngIf="error === 'network'">ไม่มีอินเทอร์เน็ต</div>
+  <div *ngIf="error === 'server'">เซิร์ฟเวอร์ล่ม</div>
+  <div *ngIf="error === 'timeout'">โหลดช้าเกินไป</div>
+</div>
 <div class="layout">
 
   <!-- LEFT FLOOR LIST -->

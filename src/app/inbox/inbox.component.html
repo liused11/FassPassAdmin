@@ -271,6 +271,7 @@
       [(visible)]="sidebarEditVisible"
       [data]="selectedBuilding"
       [loading]="loading" 
+      [error]="editError"
       [token]="sessionToken"
       (save)="handleSave($event)">
     </app-parking-edit-sidebar>

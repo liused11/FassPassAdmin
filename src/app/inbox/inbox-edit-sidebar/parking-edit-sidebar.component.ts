@@ -57,6 +57,7 @@ export class ParkingEditSidebarComponent implements OnChanges {
   @Output() visibleChange = new EventEmitter<boolean>();
   @Output() save = new EventEmitter<any>();
   @Input() token!: string;
+  @Input() error: string | null = null; // ✅ เพิ่ม
 
   form!: FormGroup;
 
@@ -161,29 +162,40 @@ export class ParkingEditSidebarComponent implements OnChanges {
   }
 
   async onFileSelected(event: any) {
-    const file: File = event.target.files[0];
+    const file: File = event.target.files?.[0];
     if (!file) return;
+
+    // 🔹 กันไฟล์แปลก ๆ (optional แต่แนะนำ)
+    if (!file.type.startsWith('image/')) {
+      console.error('Not an image file');
+      return;
+    }
 
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}.${fileExt}`;
     const filePath = `buildings/${fileName}`;
 
-    const { error } = await this.supabase.storage
+    // 🔹 Upload
+    const { data: uploadData, error } = await this.supabase.storage
       .from('parking-images')
-      .upload(filePath, file, {
-        upsert: false,
-      });
+      .upload(filePath, file, { upsert: false });
 
     if (error) {
-      console.error('Upload failed', error);
+      console.error('Upload failed:', error.message, error);
       return;
     }
 
-    const { data } = this.supabase.storage
+    console.log('Upload success:', uploadData);
+
+    // 🔹 Get public URL
+    const { data: publicUrlData } = this.supabase.storage
       .from('parking-images')
       .getPublicUrl(filePath);
 
-    this.addImage(data.publicUrl);
+    console.log('Public URL:', publicUrlData.publicUrl);
+
+    // 🔹 add เข้า form
+    this.addImage(publicUrlData.publicUrl);
   }
 
 }

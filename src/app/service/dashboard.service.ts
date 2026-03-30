@@ -32,7 +32,9 @@ export class DashboardService {
     });
 
       
-    let url = this.edgeUrl + `?site_id=${siteId}`;;
+    let url = this.edgeUrl + 
+      `?site_id=${siteId}
+      `;// &simulate=hang
 
     // ✅ ส่ง date เฉพาะตอนมีค่า
     if (date) {

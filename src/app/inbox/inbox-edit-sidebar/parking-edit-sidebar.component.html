@@ -22,8 +22,32 @@
     </div>
   </ng-container>
 
+  <!-- ERROR -->
+  <ng-container *ngIf="!loading && error">
+    <div class="error-wrapper">
+
+      <i class="pi pi-exclamation-triangle text-red-500"></i>
+
+      <div class="title">โหลดข้อมูลไม่สำเร็จ</div>
+
+      <div class="desc" *ngIf="error === 'network'">
+        ไม่มีอินเทอร์เน็ต
+      </div>
+
+      <div class="desc" *ngIf="error === 'server'">
+        เซิร์ฟเวอร์มีปัญหา
+      </div>
+
+      <div class="desc" *ngIf="error === 'timeout'">
+        เซิร์ฟเวอร์ตอบช้าเกินไป
+      </div>
+
+      <button pButton label="ปิด" (click)="close()"></button>
+    </div>
+  </ng-container>
+
   <!-- FORM -->
-  <form *ngIf="!loading && data"
+  <form *ngIf="!loading && !error && data"
         [formGroup]="form"
         class="sidebar-content split-layout">
     

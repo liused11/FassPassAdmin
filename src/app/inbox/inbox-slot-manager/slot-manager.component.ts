@@ -10,6 +10,7 @@ import { Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ParkingService } from '../../service/inbox-parking.service';
 import { SlotDetailComponent } from '../inbox-slot-detail/slot-detail.component';
 import { SlotStatus } from '../../models/slot-status.model';
+import { timeout } from 'rxjs/operators';
 
 
 interface Slot {
@@ -59,11 +60,13 @@ export class SlotManagerComponent implements OnChanges {
   searchText = '';
   showDialog = false;
   isUpdating = false;
+  isLoading = false;
 
   showSidebar = false;
   refreshInterval: ReturnType<typeof setInterval> | null = null;
   //selectedSlotIds = new Set<string>();
   selectedSlotId: string | null = null;
+  error: string | null = null;
 
   constructor(
     private parkingService: ParkingService,
@@ -115,13 +118,19 @@ export class SlotManagerComponent implements OnChanges {
   async loadSlots() {
     if (this.showSidebar) return;
     if (!this.buildingId || !this.token) return;
+    if (this.isLoading) return; // 🔥 กันยิงซ้ำ
+
+    this.isLoading = true;
 
 
     this.parkingService
         .getBuildingSlotsStatus(this.buildingId, this.token)
+        .pipe(timeout(5000))
         .subscribe({
         next: (res) => {
             if (!res.success) return;
+            this.isLoading = false;
+            this.error = null; // ✅
 
             const prevFloorId = this.selectedFloor?.id;
             this.floors = this.transformApiData(res.data);
@@ -139,7 +148,15 @@ export class SlotManagerComponent implements OnChanges {
             }
         },
         error: (err) => {
-            console.error('Load slots failed', err);
+          this.isLoading = false;
+
+          if (err.name === 'TimeoutError') {
+            this.error = 'timeout';
+          } else if (err.status === 0) {
+            this.error = 'network';
+          } else {
+            this.error = 'server';
+          }
         }
         });
     }

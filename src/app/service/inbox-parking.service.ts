@@ -24,10 +24,10 @@ export class ParkingService {
 
   getDashboard(token: string, siteId: string): Observable<any> {
     return this.http.get(
-      `${this.baseUrl}/get-dashboard-parking?site_id=${siteId}`, 
+      `${this.baseUrl}/get-dashboard-parking?site_id=${siteId}`, //&simulate=hang
       { headers: this.getHeaders(token) }
     );
-  }
+  }  
   getBuildingById(id: string, token: string): Observable<any> {
     return this.http.get(
       `${this.baseUrl}/get-parking-sidebar-detail?id=${id}`,
@@ -52,14 +52,14 @@ export class ParkingService {
       }
     );
   }
-  getBuildingSlots(buildingId: string, token: string) {
+  /*getBuildingSlots(buildingId: string, token: string) {
     return this.http.get<any>(
       `${this.baseUrl}/get-building-slots?building_id=${buildingId}`,
       { 
         headers: this.getHeaders(token) 
       }
     );
-  }
+  }*/
 
   getBuildingSlotsStatus(buildingId: string, token: string) {
     return this.http.get<any>(

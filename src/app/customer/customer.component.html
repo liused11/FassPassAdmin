@@ -1,8 +1,12 @@
+<<<<<<< HEAD
+<div class="flex flex-column md:flex-row gap-4 w-full p-3 md:p-4 surface-ground min-h-screen align-items-start relative">
+=======
 <p-toast></p-toast>
 <p-confirmDialog></p-confirmDialog>
 
 <div
     class="flex flex-column md:flex-row gap-4 w-full p-3 md:p-4 surface-ground min-h-screen align-items-start relative">
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
     <div *ngIf="loading"
         class="fixed top-0 left-0 w-full h-full flex align-items-center justify-content-center bg-white-alpha-70"
         style="z-index: 9999;">
@@ -13,6 +17,17 @@
         <div class="text-900 font-bold text-lg md:text-xl mb-2 md:mb-3 px-2 hidden md:block">User Groups</div>
 
         <div class="flex flex-row md:flex-column gap-2 overflow-x-auto pb-2 md:pb-0">
+            <div class="p-ripple p-3 flex align-items-center justify-content-between cursor-pointer border-round transition-colors transition-duration-150 hover:surface-100 flex-shrink-0 min-w-max mb-3 border-bottom-1 border-300"
+                [class.surface-200]="selectedCategory === 'Admin Management'"
+                [class.text-red-600]="selectedCategory === 'Admin Management'"
+                (click)="setCategory('Admin Management')">
+                <div class="flex align-items-center gap-2">
+                    <i class="pi pi-shield text-lg text-red-500"></i>
+                    <span class="font-bold">Admin Manage</span>
+                </div>
+                <p-badge [value]="getAdminCount().toString()" severity="danger" styleClass="ml-3"></p-badge>
+            </div>
+
             <div class="p-ripple p-3 flex align-items-center justify-content-between cursor-pointer border-round transition-colors transition-duration-150 hover:surface-100 flex-shrink-0 min-w-max"
                 [class.surface-100]="selectedCategory === 'All'" [class.text-primary]="selectedCategory === 'All'"
                 (click)="setCategory('All')">
@@ -57,7 +72,6 @@
 
 
     <div class="flex-1 flex flex-column gap-4 w-full overflow-hidden">
-
         <div class="grid grid-nogutter">
             <div *ngFor="let metric of metrics" class="col-12 sm:col-6 lg:col-3 p-2">
                 <p-card styleClass="shadow-2 border-none h-full border-round-xl">
@@ -67,8 +81,7 @@
                             <div class="text-3xl font-bold text-blue-600">{{ metric.value }}</div>
                             <div class="text-xs text-blue-400 mt-1 font-medium">{{ metric.subtext }}</div>
                         </div>
-                        <div
-                            class="w-3rem h-3rem border-round bg-blue-50 flex align-items-center justify-content-center">
+                        <div class="w-3rem h-3rem border-round bg-blue-50 flex align-items-center justify-content-center">
                             <i [class]="metric.icon" class="text-xl text-blue-700"></i>
                         </div>
                     </div>
@@ -76,10 +89,8 @@
             </div>
         </div>
 
-        <div
-            class="w-full bg-white p-3 border-round-xl shadow-1 border-1 border-100 flex flex-column md:flex-row flex-wrap align-items-center justify-content-between gap-3">
-            <div
-                class="flex flex-wrap align-items-center gap-2 w-full md:w-auto justify-content-center md:justify-content-start">
+        <div class="w-full bg-white p-3 border-round-xl shadow-1 border-1 border-100 flex flex-column md:flex-row flex-wrap align-items-center justify-content-between gap-3">
+            <div class="flex flex-wrap align-items-center gap-2 w-full md:w-auto justify-content-center md:justify-content-start">
                 <p-calendar [(ngModel)]="selectedDate" placeholder="วันที่" [showIcon]="true"
                     styleClass="w-full md:w-11rem p-inputtext-sm"></p-calendar>
                 <p-dropdown [options]="roleOptions" placeholder="บทบาท"
@@ -93,16 +104,14 @@
         </div>
 
         <div class="surface-card border-round-xl shadow-3 overflow-hidden">
-
-            <div
-                class="flex flex-column md:flex-row align-items-center justify-content-between p-3 md:p-4 border-bottom-1 border-100 bg-white gap-3">
-                <div
-                    class="flex align-items-center gap-3 w-full md:w-auto justify-content-between md:justify-content-start">
+            <div class="flex flex-column md:flex-row align-items-center justify-content-between p-3 md:p-4 border-bottom-1 border-100 bg-white gap-3">
+                <div class="flex align-items-center gap-3 w-full md:w-auto justify-content-between md:justify-content-start">
                     <span class="font-bold text-lg border-bottom-2 pb-1"
-                        [class.text-blue-600]="selectedCategory === 'Internal'">
+                        [class.text-blue-600]="selectedCategory !== 'Admin Management'"
+                        [class.text-red-600]="selectedCategory === 'Admin Management'">
                         {{ selectedCategory }} List
                     </span>
-                    <p-button label="เพิ่ม" icon="pi pi-user-plus" [outlined]="true" size="small"></p-button>
+                    <p-button label="เชิญผู้ใช้งาน" icon="pi pi-envelope" [outlined]="true" size="small" (onClick)="showInviteModal()"></p-button>
                 </div>
                 <span class="p-input-icon-left w-full md:w-auto">
                     <i class="pi pi-search"></i>
@@ -119,11 +128,8 @@
                         <th>บริษัท </th>
                         <th>บทบาท </th>
                         <th class="hidden md:table-cell">Auth</th>
-
                         <th class=" md:table-cell">วันที่ลงทะเบียน </th>
-
                         <th class=" md:table-cell">สิทธิ์ถึง </th>
-
                         <th>สถานะ</th>
                         <th class="hidden md:table-cell">ใช้งานล่าสุด</th>
                         <th>จัดการ</th>
@@ -166,33 +172,29 @@
                         <td class="md:table-cell">
                             <div class="flex align-items-center gap-2 text-700">
                                 <i class="pi pi-calendar-plus text-blue-400"></i>
-                                <span>{{ user.registerDate | date:'dd/MM/yyyy' }}</span>
+                                <span>{{ user.registerDate }}</span>
                             </div>
                         </td>
 
                         <td class=" md:table-cell">
                             <div *ngIf="user.expiryDate; else permanentTemplate">
-
                                 <div *ngIf="isExpired(user.expiryDate); else activeDateTemplate"
                                     class="flex flex-column">
                                     <span class="text-red-500 font-bold text-xs line-through mb-1">
-                                        {{ user.expiryDate | date:'dd/MM/yyyy' }}
+                                        {{ user.expiryDate  }}
                                     </span>
                                     <p-tag value="EXPIRED" severity="danger"
                                         styleClass="text-[10px] py-0 px-1 w-min h-1rem"></p-tag>
                                 </div>
-
                                 <ng-template #activeDateTemplate>
                                     <div class="flex align-items-center gap-2 text-700">
                                         <i class="pi pi-calendar text-400"></i>
-                                        <span>{{ user.expiryDate | date:'dd/MM/yyyy' }}</span>
+                                        <span>{{ user.expiryDate  }}</span>
                                     </div>
                                 </ng-template>
                             </div>
-
                             <ng-template #permanentTemplate>
-                                <span
-                                    class="text-green-600 font-medium text-xs border-1 border-green-200 bg-green-50 px-2 py-1 border-round">
+                                <span class="text-green-600 font-medium text-xs border-1 border-green-200 bg-green-50 px-2 py-1 border-round">
                                     ถาวร
                                 </span>
                             </ng-template>
@@ -207,6 +209,41 @@
                         <td class="text-500 text-xs hidden md:table-cell">{{user.lastActive}}</td>
 
                         <td>
+<<<<<<< HEAD
+                            <div class="flex gap-1">
+                                <ng-container *ngIf="selectedCategory !== 'Admin Management'">
+                                    <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" severity="info" size="small"></p-button>
+                                    
+                                    <p-button *ngIf="user.status !== 'Blacklist'" 
+                                              icon="pi pi-ban" pTooltip="เพิ่มเข้า Blacklist" tooltipPosition="left"
+                                              [text]="true" [rounded]="true" severity="danger" size="small"
+                                              (onClick)="toggleBlacklist(user)">
+                                    </p-button>
+                                    <p-button *ngIf="user.status === 'Blacklist'" 
+                                              icon="pi pi-check-circle" pTooltip="ปลด Blacklist" tooltipPosition="left"
+                                              [text]="true" [rounded]="true" severity="success" size="small"
+                                              (onClick)="toggleBlacklist(user)">
+                                    </p-button>
+
+                                    <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger" size="small"></p-button>
+                                </ng-container>
+
+                                <ng-container *ngIf="selectedCategory === 'Admin Management'">
+                                    <p-button *ngIf="user.role !== 'Admin' && user.role !== 'Super Admin'" 
+                                              icon="pi pi-arrow-up" label="Promote" 
+                                              pTooltip="เลื่อนขั้นเป็น Admin" tooltipPosition="left"
+                                              [outlined]="true" [rounded]="true" severity="success" size="small"
+                                              (onClick)="confirmPromote(user)">
+                                    </p-button>
+
+                                    <p-button *ngIf="user.role === 'Admin'" 
+                                              icon="pi pi-arrow-down" label="Demote" 
+                                              pTooltip="ลดขั้นเป็น User" tooltipPosition="left"
+                                              [outlined]="true" [rounded]="true" severity="danger" size="small"
+                                              (onClick)="confirmDemote(user)">
+                                    </p-button>
+                                </ng-container>
+=======
                             <div class="flex gap-2">
                                 <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" severity="info"
                                     size="small" pTooltip="แก้ไขข้อมูล" tooltipPosition="top"
@@ -221,6 +258,7 @@
                                 <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
                                     size="small" pTooltip="ลบ" tooltipPosition="top"
                                     (onClick)="deleteUser(user)"></p-button>
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
                             </div>
                         </td>
                     </tr>
@@ -230,6 +268,22 @@
     </div>
 </div>
 
+<<<<<<< HEAD
+<p-toast></p-toast>
+<p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+<p-dialog header="เชิญผู้ใช้งานใหม่" [(visible)]="displayInviteModal" [modal]="true" [style]="{width: '400px'}">
+  <div class="flex flex-column gap-3 pt-3">
+      <label for="email" class="font-semibold">อีเมลของผู้ใช้งาน</label>
+      <input pInputText id="email" [(ngModel)]="inviteEmail" placeholder="example@mail.com" type="email" />
+  </div>
+  <ng-template pTemplate="footer">
+      <p-button label="ยกเลิก" icon="pi pi-times" [text]="true" severity="secondary" (onClick)="displayInviteModal = false"></p-button>
+      <p-button label="ส่งคำเชิญ" icon="pi pi-send" [loading]="isInviting" (onClick)="sendInvite()"></p-button>
+  </ng-template>
+</p-dialog>
+
+=======
 <!-- Edit User Dialog -->
 <p-dialog [(visible)]="displayEditDialog" [header]="''" [modal]="true" [style]="{width: '500px', maxHeight: '90vh'}"
     [draggable]="false" [resizable]="false" styleClass="p-fluid customer-edit-dialog shadow-4 border-none">
@@ -358,3 +412,4 @@
         </div>
     </ng-template>
 </p-dialog>
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea

@@ -5,6 +5,10 @@
             <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="4"></p-progressSpinner>
         </div>
 
+        <div class="fixed bottom-0 right-0 p-3" style="z-index: 100;">
+            <i class="pi pi-spin pi-sync text-200" *ngIf="!loading" pTooltip="Auto-syncing..."></i>
+        </div>
+
         <div class="grid grid-nogutter gap-3 md:gap-4">
             <div *ngFor="let metric of metrics" class="col-12 md:col-6 lg:col-3">
                 <p-card styleClass="h-full shadow-2 border-round-xl border-none">
@@ -20,7 +24,7 @@
                             class="w-3rem h-3rem border-round bg-gray-50 flex align-items-center justify-content-center border-1 border-100">
                             <i [class]="metric.icon" class="text-xl text-700"></i>
                         </div>
-                    </div>
+                    </div> 
                 </p-card>
             </div>
         </div>
@@ -211,207 +215,81 @@
                     No history found.
                 </div>
 
-                <div *ngFor="let log of selectedUserHistory"
-                    class="mb-4 p-0 surface-card border-round-xl shadow-2 overflow-hidden border-1 border-gray-200">
-
-                    <div class="flex justify-content-between align-items-center p-3"
-                        [ngClass]="log.category === 'normal' ? 'bg-gray-50' : 'bg-red-50'">
+                <div *ngFor="let log of selectedUserHistory" class="mb-4 surface-card border-round-xl shadow-2 overflow-hidden border-1 border-gray-200">
+                
+                    <div class="flex justify-content-between align-items-center p-3" [ngClass]="log.category === 'normal' ? 'bg-gray-50' : 'bg-red-50'">
                         <div class="flex align-items-center gap-2 overflow-hidden">
-                            <i [class]="getActivityIcon(log.type)" class="text-lg flex-shrink-0"></i>
-                            <span class="font-bold text-700 white-space-nowrap text-overflow-ellipsis">{{ formatAction(log.action) }}</span>
+                            <i [class]="log.logDisplay?.icon" class="text-lg flex-shrink-0"></i>
+                            <span class="font-bold text-700 white-space-nowrap text-overflow-ellipsis">{{ log.logDisplay?.title }}</span>
                         </div>
                         <div class="flex flex-column align-items-end flex-shrink-0 ml-2">
                             <span class="text-xs font-mono text-500">{{ log.time | date:'dd MMM yyyy, HH:mm' }}</span>
-                            <span class="text-[10px] font-bold px-2 border-round text-white mt-1"
+                            <span class="text-[10px] font-bold px-2 border-round text-white mt-1 uppercase"
                                 [ngClass]="log.logType === 'revision' ? 'bg-orange-500' : 'bg-blue-500'">
-                                {{ log.logType === 'revision' ? 'REVISION' : 'ACTIVITY' }}
+                                {{ log.logType }}
                             </span>
                         </div>
                     </div>
 
                     <div class="p-3">
+                        
+                        <div class="flex align-items-center gap-2 mb-3 text-blue-600" *ngIf="log.logDisplay?.subtitle">
+                            <i [class]="log.logDisplay?.icon"></i>
+                            <span class="font-bold text-sm uppercase tracking-wider">{{ log.logDisplay?.subtitle }}</span>
+                        </div>
 
-                        <div *ngIf="log.logType === 'revision'">
-                            <div class="text-xs text-500 mb-2 font-mono">
-                                Entity ID: {{ log.entityId }}
-                            </div>
-
-                            <div class="border-round bg-white border-1 border-gray-200">
-                                <table class="w-full text-sm revision-table" style="border-collapse: collapse;">
-                                    <thead class="bg-gray-100 text-600 text-xs border-bottom-1 border-gray-200">
-                                        <tr>
-                                            <th class="p-2 text-left">Field</th>
-                                            <th class="p-2 text-left text-red-400">Old</th>
-                                            <th class="p-2 text-left text-green-600">New</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        <tr *ngFor="let row of log.revisionRows || []"
-                                            [ngClass]="row.changed ? 'bg-yellow-50' : ''"
-                                            class="border-bottom-1 border-gray-100 last:border-none">
-
-                                            <td class="p-2 font-semibold text-700 break-word">
-                                                {{ row.field }}
-                                            </td>
-
-                                            <td class="p-2 break-word"
-                                                [ngClass]="row.changed 
-                                                ? 'text-red-400 line-through opacity-70' 
-                                                : 'text-400'">
-                                                {{ row.old ?? 'null' }}
-                                            </td>
-
-                                            <td class="p-2 break-word"
-                                                [ngClass]="row.changed 
-                                                ? 'text-green-600 font-medium' 
-                                                : 'text-400'">
-                                                {{ row.new ?? 'null' }}
-                                            </td>
-
-                                        </tr>
-                                    </tbody>
-                                </table>
+                        <div class="grid row-gap-3 mb-4" *ngIf="log.logDisplay?.attributes?.length">
+                            <div *ngFor="let attr of log.logDisplay?.attributes" class="col-6">
+                                <label class="block text-xs text-500 mb-1">{{ attr.label }}</label>
+                                <span class="font-semibold text-800" [ngClass]="attr.color">{{ attr.value || '-' }}</span>
                             </div>
                         </div>
 
-                        <div *ngIf="log.logType === 'activity'" class="text-sm">
-                            <!-- SLOT SCHEDULE -->
-                            <div *ngIf="log.entityType === 'slot_status_overrides' && log.schedule?.ranges?.length" class="mb-3">
-
-                                <div class="font-semibold text-700 mb-2 flex align-items-center gap-2">
-                                    <i class="pi pi-clock text-blue-500"></i>
-                                    Slot Schedule Updated
+                        <div class="p-3 border-left-3 border-blue-500 bg-blue-50 border-round-right-lg mb-4" *ngIf="log.logDisplay?.contexts?.length">
+                            <div class="text-xs font-bold text-blue-700 mb-2 uppercase tracking-wider">Context Details</div>
+                            <div class="grid row-gap-2">
+                                <div *ngFor="let ctx of log.logDisplay?.contexts" class="col-12 text-sm flex align-items-baseline gap-2">
+                                    <span class="text-600 font-medium min-w-max">{{ ctx.label }}:</span>
+                                    <span class="text-800">{{ ctx.value || '-' }}</span>
                                 </div>
-
-                                <!-- SLOT INFO -->
-                                <div class="text-sm text-600 mb-1">
-                                    <span class="font-semibold">Slot:</span>
-                                    {{ log.entityId }}
-                                </div>
-
-                                <div class="text-sm text-600 mb-2">
-                                    <span class="font-semibold">Date:</span>
-                                    {{ log.schedule?.date | date:'dd MMM yyyy' }}
-                                </div>
-
-                                <!-- SCHEDULE -->
-                                <div class="flex align-items-center gap-3">
-
-                                    <span class="font-mono text-700">
-                                        {{ log.schedule?.ranges[0]?.start_time }} – {{ log.schedule?.ranges[0]?.end_time }}
-                                    </span>
-
-                                    <p-tag
-                                        [value]="log.schedule?.ranges[0]?.status | titlecase"
-                                        [severity]="log.schedule?.ranges[0]?.status === 'maintenance' ? 'warning' : 'success'"
-                                        [rounded]="true">
-                                    </p-tag>
-
-                                </div>
-
                             </div>
+                        </div>
 
-                            <!-- SLOT DEFAULT STATUS -->
-                            <div *ngIf="log.entityType === 'slots' && log.changes?.status" class="mb-3">
+                        <div *ngIf="log.logDisplay?.hasChanges" class="border-round bg-white border-1 border-gray-200 mt-2">
+                            <table class="w-full text-sm" style="border-collapse: collapse;">
+                                <thead class="bg-gray-100 text-600 text-xs border-bottom-1 border-gray-200">
+                                    <tr>
+                                        <th class="p-2 text-left">Field</th>
+                                        <th class="p-2 text-left text-red-400">Old</th>
+                                        <th class="p-2 text-left text-green-600">New</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let row of log.revisionRows" [ngClass]="row.changed ? 'bg-yellow-50' : ''" class="border-bottom-1 border-gray-100 last:border-none">
+                                        <td class="p-2 font-semibold text-700 break-word">{{ row.field }}</td>
+                                        <td class="p-2 break-word" [ngClass]="row.changed ? 'text-red-400 line-through opacity-70' : 'text-400'">{{ row.old ?? 'null' }}</td>
+                                        <td class="p-2 break-word" [ngClass]="row.changed ? 'text-green-600 font-medium' : 'text-400'">{{ row.new ?? 'null' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
-                            <div class="font-semibold text-700 mb-2 flex align-items-center gap-2">
-                                <i class="pi pi-car text-blue-500"></i>
-                                Slot Default Status Changed
-                            </div>
-
-                            <!-- SLOT -->
-                            <div class="text-sm text-600 mb-2">
-                                <span class="font-semibold">Slot:</span>
-
-                                <span class="px-2 py-1 border-round bg-blue-50 text-blue-600 text-xs font-mono ml-1">
-                                {{ log.entityId }}
-                                </span>
-                            </div>
-
-                            <!-- STATUS -->
+                        <div class="border-top-1 border-100 pt-3 mt-3 flex justify-content-between align-items-center">
+    
                             <div class="flex align-items-center gap-2">
+                                <span class="text-xs text-500 font-medium">By:</span>
+                                <div class="flex align-items-center gap-1 text-700 bg-gray-100 px-2 py-1 border-round">
+                                    <i class="pi pi-user text-xs"></i>
+                                    <span class="text-xs font-bold">{{ log.user || 'System' }}</span>
+                                </div>
+                            </div>
 
-                                <span class="text-sm text-600 font-semibold">
-                                Default Status
-                                </span>
-
-                                <p-tag
-                                [value]="(log.changes?.status | titlecase) + ' (Indefinite)'"
-                                [severity]="
-                                    log.changes?.status === 'maintenance'
-                                    ? 'warning'
-                                    : log.changes?.status === 'disabled'
-                                    ? 'danger'
-                                    : 'success'
-                                "
+                            <p-tag [value]="log.status | titlecase" 
+                                [severity]="getStatusSeverity(log.status)" 
                                 [rounded]="true">
-                                </p-tag>
-
-                            </div>
-
+                            </p-tag>
+                            
                         </div>
-
-                            <!-- ENTITY INFO -->
-                            <div *ngIf="log.entityInfo" class="mb-3">
-                                <div class="font-semibold text-700 mb-1">
-                                    {{ formatEntity(log.entityType) }}
-                                </div>
-
-                                <div *ngIf="log.entityInfo.plate">Plate: {{ log.entityInfo.plate }}</div>
-                                <div *ngIf="log.entityInfo.model">Model: {{ log.entityInfo.model }}</div>
-                                <div *ngIf="log.entityInfo.province">Province: {{ log.entityInfo.province }}</div>
-                                <div *ngIf="log.entityInfo.slot">Slot: {{ log.entityInfo.slot }}</div>
-                                <div *ngIf="log.entityInfo.floor">Floor: {{ log.entityInfo.floor }}</div>
-                            </div>
-
-                            <!-- CONTEXT INFO -->
-                            <div *ngIf="log.contextInfo" class="mb-3">
-                                <div class="font-semibold text-700 mb-1">Context</div>
-
-                                <div *ngIf="log.contextInfo.location">
-                                    Location: {{ log.contextInfo.location }}
-                                </div>
-
-                                <div *ngIf="log.contextInfo.device">
-                                    Device: {{ log.contextInfo.device }}
-                                </div>
-
-                                <div *ngIf="log.contextInfo.method">
-                                    Method: {{ log.contextInfo.method }}
-                                </div>
-
-                                <div *ngIf="log.contextInfo.verification">
-                                    Verification: {{ log.contextInfo.verification }}
-                                </div>
-                            </div>
-
-                            <!-- RESULT -->
-                            <div class="border-top-1 border-200 pt-2 mt-2">
-
-                                <div class="mb-1">
-                                    <span class="font-semibold">By:</span>
-                                    {{ log.resultInfo?.by }}
-                                </div>
-
-                                <div class="mb-1">
-                                    <span class="font-semibold">Time:</span>
-                                    {{ log.time | date:'dd MMM yyyy HH:mm' }}
-                                </div>
-
-                                <div>
-                                    <span class="font-semibold">Status:</span>
-
-                                    <p-tag
-                                        [value]="log.status | titlecase"
-                                        [severity]="getStatusSeverity(log.status)"
-                                        [rounded]="true">
-                                    </p-tag>
-                                </div>
-
-                            </div>
-
-                        </div> 
 
                     </div>
                 </div>

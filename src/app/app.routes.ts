@@ -37,10 +37,6 @@ export const routes: Routes = [
   { path: 'customer', component: CustomerComponent },
   { path: 'reserve', component: CardComponent },
   { path: 'video', component: VideoComponent },
-  { path: 'fp', component: FloorPlanViewerComponent },
-  {
-    path: 'parking',
-    loadComponent: () => import('./parking/parking-management/parking-management.component').then(m => m.ParkingManagementComponent)
-  }
+  { path: 'fp', component: FloorPlanViewerComponent }
 ];
 

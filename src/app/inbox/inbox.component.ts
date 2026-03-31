@@ -144,7 +144,12 @@ export class InboxComponent implements OnInit, OnDestroy {
           detail: `เวลาเปิด-ปิด: ${b.open_time} - ${b.close_time}`,
           address: b.address,
           status: b.status,
+<<<<<<< HEAD
           price: b.price, // ✅ ใช้ b.price ที่ดึงค่ามาจาก role_price ฝั่ง Backend
+=======
+          // ✅ เปลี่ยนตรงนี้
+          priceText: b.price_text,
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
           rate: b.rate,
           openTime: b.open_time,
           closeTime: b.close_time
@@ -270,9 +275,14 @@ export class InboxComponent implements OnInit, OnDestroy {
       address: formData.address,
       open_time: formData.openTime,
       close_time: formData.closeTime,
+<<<<<<< HEAD
       role_price: formData.hourlyRate, // ✅ แก้เป็น role_price เผื่อไว้ (ขึ้นอยู่กับฝั่ง Backend รับค่าอะไร)
+=======
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
       is_active: formData.isActive,
-      images: formData.images ?? []
+      images: formData.images ?? [],
+      // ✅ เพิ่ม role_prices เข้าไป
+      role_prices: formData.role_prices
     };
 
     const originalBuilding = {
@@ -280,9 +290,14 @@ export class InboxComponent implements OnInit, OnDestroy {
       address: this.originalBuilding.address,
       open_time: this.originalBuilding.openTime,
       close_time: this.originalBuilding.closeTime,
+<<<<<<< HEAD
       role_price: this.originalBuilding.hourlyRate, // ✅ สอดคล้องกับด้านบน
+=======
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
       is_active: this.originalBuilding.isActive,
-      images: this.originalBuilding.images ?? []
+      images: this.originalBuilding.images ?? [],
+      // ✅ ดึงจากก้อนต้นฉบับที่เก็บไว้ตอน openEdit
+      role_prices: this.originalBuilding.role_prices
     };
         
     const entities: any[] = [];
@@ -321,8 +336,21 @@ export class InboxComponent implements OnInit, OnDestroy {
       const originalValue = original[key];
       const editedValue = edited[key];
 
+<<<<<<< HEAD
+=======
+      // Compare array
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
       if (Array.isArray(originalValue) && Array.isArray(editedValue)) {
         if (JSON.stringify(originalValue.sort()) !== JSON.stringify(editedValue.sort())) {
+          changes[key] = editedValue;
+        }
+        return;
+      }
+       
+      // Compare Object / JSONB
+      if (typeof originalValue === 'object' && originalValue !== null && 
+          typeof editedValue === 'object' && editedValue !== null) {
+        if (JSON.stringify(originalValue) !== JSON.stringify(editedValue)) {
           changes[key] = editedValue;
         }
         return;

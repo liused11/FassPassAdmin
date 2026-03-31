@@ -18,10 +18,17 @@ import { TooltipModule } from 'primeng/tooltip';
 import { BadgeModule } from 'primeng/badge';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DialogModule } from 'primeng/dialog';
+<<<<<<< HEAD
 
 // ✅ นำเข้า Module สำหรับแจ้งเตือนและ Popup ยืนยัน (ฟีเจอร์ของคุณ)
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
+=======
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ToastModule } from 'primeng/toast';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputNumberModule } from 'primeng/inputnumber';
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { UserManagementService, UserManagementResponse } from '../service/user-management.service';
@@ -49,6 +56,7 @@ interface User {
   selector: 'app-customer',
   standalone: true,
   imports: [
+<<<<<<< HEAD
     CommonModule, FormsModule, HttpClientModule,
     TableModule, ButtonModule, CardModule, DropdownModule,
     CalendarModule, InputTextModule, IconFieldModule, InputIconModule,
@@ -61,6 +69,55 @@ interface User {
     .overflow-x-auto { -ms-overflow-style: none; scrollbar-width: none; }
   `],
   // ✅ เพิ่ม Service ของ Popup ยืนยันลงใน Providers
+=======
+    CommonModule,
+    FormsModule,
+    HttpClientModule,
+    TableModule,
+    ButtonModule,
+    CardModule,
+    DropdownModule,
+    CalendarModule,
+    InputTextModule,
+    IconFieldModule,
+    InputIconModule,
+    AvatarModule,
+    TagModule,
+    TooltipModule,
+    TooltipModule,
+    BadgeModule,
+    ProgressSpinnerModule,
+    DialogModule,
+    ConfirmDialogModule,
+    ToastModule,
+    CheckboxModule,
+    InputNumberModule
+  ],
+  templateUrl: './customer.component.html',
+  styles: [`
+    /* Custom scrollbar for mobile sidebar tabs */
+    .overflow-x-auto::-webkit-scrollbar {
+      display: none;
+    }
+    .overflow-x-auto {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    :host ::ng-deep .p-dialog .p-dialog-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1.5rem;
+    }
+    :host ::ng-deep .p-dialog .p-dialog-content {
+      padding: 2rem;
+    }
+    :host ::ng-deep .p-dialog .p-dialog-footer {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 1rem 1.5rem;
+    }
+  `],
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
   providers: [UserManagementService, ConfirmationService, MessageService]
 })
 export class CustomerComponent implements OnInit {
@@ -106,7 +163,10 @@ export class CustomerComponent implements OnInit {
   allUsers: User[] = [];
   loading: boolean = false;
 
+<<<<<<< HEAD
   // ✅ Inject Message และ Confirmation Service เข้ามา
+=======
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
   constructor(
     private userManagementService: UserManagementService,
     private confirmationService: ConfirmationService,
@@ -137,7 +197,12 @@ export class CustomerComponent implements OnInit {
     }
 
     this.userManagementService.getProfiles(token).subscribe({
+<<<<<<< HEAD
       next: (response: UserManagementResponse) => {
+=======
+      next: async (response: UserManagementResponse) => {
+        // Map Metrics
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
         if (response.metrics) {
           this.metrics = response.metrics.map(m => {
             let icon = 'pi pi-info-circle';
@@ -149,6 +214,7 @@ export class CustomerComponent implements OnInit {
           });
         }
 
+<<<<<<< HEAD
         if (response.profiles) {
           this.allUsers = response.profiles.map(p => {
             // ✅ นำระบบเดา Category ของคุณกลับมา เพื่อให้เมนูด้านซ้ายกรองข้อมูลได้จริง!
@@ -169,6 +235,37 @@ export class CustomerComponent implements OnInit {
               authMethod: 'Email',
               status: 'Active', // ค่าเริ่มต้นให้เป็น Active
               lastActive: '-',
+=======
+        // Fetch Active Blacklist Records
+        const { data: blacklist, error: blError } = await this.supabase
+          .from('blacklist_records')
+          .select('identifier_value, entity_id')
+          .eq('entity_type', 'user')
+          .eq('status', 'active');
+
+        const blacklistedIds = new Set((blacklist || []).map(b => b.entity_id || b.identifier_value));
+
+        // Map Users
+        if (response.profiles) {
+          this.allUsers = response.profiles.map(p => {
+            // Split name into firstName and lastName if possible
+            const nameParts = (p.name || '').trim().split(' ');
+            const fName = nameParts[0] || '';
+            const lName = nameParts.slice(1).join(' ') || '';
+
+            return {
+              id: p.id,
+              firstName: fName,
+              lastName: lName,
+              phone: p.phone || '',
+              email: p.email || '',
+              company: '', 
+              category: '' as any, 
+              role: p.role || '',
+              authMethod: '', 
+              status: blacklistedIds.has(p.id) ? 'Blacklist' : 'Active', // Set status based on blacklist table
+              lastActive: '', 
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
               registerDate: p.joined_date || p.created_at || '',
               expiryDate: null,
               avatarUrl: p.avatar
@@ -204,6 +301,7 @@ export class CustomerComponent implements OnInit {
     return this.allUsers.filter(u => u.category === category).length;
   }
 
+<<<<<<< HEAD
   // ✅ ระบบนับแอดมิน (ฟีเจอร์ของคุณ)
   getAdminCount(): number {
     return this.allUsers.filter(u => u.role === 'Admin' || u.role === 'Super Admin').length;
@@ -271,9 +369,13 @@ export class CustomerComponent implements OnInit {
 
   // Helper Methods (ของเดิม)
   getRoleSeverity(role: string): "success" | "info" | "warning" | "danger" | "secondary" | "contrast" | undefined {
+=======
+  // Helper: Role Color
+  getRoleSeverity(role: string): any {
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
     switch (role) {
       case 'Super Admin':
-      case 'Admin': return 'primary' as any;
+      case 'Admin': return 'primary';
       case 'Security': return 'contrast';
       case 'Employee': 
       case 'User': return 'info';
@@ -308,6 +410,10 @@ export class CustomerComponent implements OnInit {
     }
   }
 
+  getBlacklistSeverity(status: string): any {
+    return status === 'Blacklist' ? 'success' : 'warn';
+  }
+
   isExpired(dateString: string | null): boolean {
     if (!dateString) return false;
     const exp = new Date(dateString);
@@ -316,6 +422,7 @@ export class CustomerComponent implements OnInit {
     return exp < today;
   }
 
+<<<<<<< HEAD
   displayInviteModal: boolean = false;
   inviteEmail: string = '';
   isInviting: boolean = false;
@@ -355,6 +462,145 @@ export class CustomerComponent implements OnInit {
         console.error('Invite Error:', err);
         this.messageService.add({ severity: 'error', summary: 'ผิดพลาด', detail: 'ไม่สามารถส่งคำเชิญได้' });
         this.isInviting = false;
+=======
+  // --- New Actions ---
+
+  displayEditDialog: boolean = false;
+  editingUser: User | null = null;
+
+  editUser(user: User) {
+    this.editingUser = { ...user };
+    this.displayEditDialog = true;
+  }
+
+  async saveUser() {
+    if (this.editingUser) {
+      this.loading = true;
+      try {
+        const fullName = `${this.editingUser.firstName} ${this.editingUser.lastName}`.trim();
+
+        const { error } = await this.supabase
+          .from('profiles')
+          .update({
+            name: fullName,
+            email: this.editingUser.email,
+            phone: this.editingUser.phone,
+            role: this.editingUser.role
+            // Add other fields if they exist in your table, e.g., company: this.editingUser.company
+          })
+          .eq('id', this.editingUser.id);
+
+        if (error) throw error;
+
+        const index = this.allUsers.findIndex(u => u.id === this.editingUser!.id);
+        if (index !== -1) {
+          this.allUsers[index] = { ...this.editingUser };
+          this.allUsers = [...this.allUsers]; // Trigger change detection
+          this.messageService.add({ severity: 'success', summary: 'สำเร็จ', detail: 'อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว' });
+        }
+        this.displayEditDialog = false;
+        this.editingUser = null;
+      } catch (error: any) {
+        console.error('Error updating user:', error);
+        this.messageService.add({ severity: 'error', summary: 'ข้อผิดพลาด', detail: 'ไม่สามารถอัปเดตข้อมูลได้: ' + (error.message || error) });
+      } finally {
+        this.loading = false;
+      }
+    }
+  }
+
+  toggleBlacklist(user: User) {
+    const isCurrentlyBlacklisted = user.status === 'Blacklist';
+    const action = isCurrentlyBlacklisted ? 'Unblock' : 'Blacklist';
+    const color = isCurrentlyBlacklisted ? 'success' : 'danger';
+
+    this.confirmationService.confirm({
+      message: `คุณแน่ใจหรือไม่ว่าต้องการ ${isCurrentlyBlacklisted ? 'ปลดบล็อก' : 'ระงับการใช้งาน (Blacklist)'} ผู้ใช้นี้?`,
+      header: 'ยืนยันรายการ',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'ยืนยัน',
+      rejectLabel: 'ยกเลิก',
+      acceptButtonStyleClass: `p-button-${color} p-button-sm`,
+      rejectButtonStyleClass: 'p-button-text p-button-secondary p-button-sm',
+      accept: async () => {
+        this.loading = true;
+        try {
+          const newStatus = isCurrentlyBlacklisted ? 'Active' : 'Blacklist';
+
+          if (newStatus === 'Blacklist') {
+            // 1. Add record to blacklist_records
+            const { error: blError } = await this.supabase
+              .from('blacklist_records')
+              .insert({
+                entity_type: 'user', // lowercase as per user feedback
+                identifier_value: user.id, // Using profile_id as identifier_value
+                entity_id: user.id,
+                reason: 'ระงับการใช้งานโดยผู้ดูแลระบบ (Customer Management)',
+                status: 'active'
+              });
+            
+            if (blError) throw blError;
+          } else {
+            // 2. Update record in blacklist_records to inactive
+            const { error: blError } = await this.supabase
+              .from('blacklist_records')
+              .update({ status: 'inactive', updated_at: new Date().toISOString() })
+              .eq('identifier_value', user.id)
+              .eq('entity_type', 'user')
+              .eq('status', 'active');
+            
+            if (blError) throw blError;
+          }
+
+          // Note: Profiles table has no 'status' column, so we ONLY update local state
+          const index = this.allUsers.findIndex(u => u.id === user.id);
+          if (index !== -1) {
+            this.allUsers[index].status = newStatus;
+            this.allUsers = [...this.allUsers];
+            this.messageService.add({
+              severity: isCurrentlyBlacklisted ? 'info' : 'warn',
+              summary: isCurrentlyBlacklisted ? 'ปลดบล็อกแล้ว' : 'ระงับการใช้งานแล้ว',
+              detail: `${user.firstName} ${user.lastName} ถูก${isCurrentlyBlacklisted ? 'ปลดบล็อก' : 'เพิ่มในรายชื่อ Blacklist'} เรียบร้อยแล้ว`
+            });
+          }
+        } catch (error: any) {
+          console.error('Error toggling blacklist:', error);
+          this.messageService.add({ severity: 'error', summary: 'ข้อผิดพลาด', detail: 'ไม่สามารถดำเนินการได้: ' + (error.message || error) });
+        } finally {
+          this.loading = false;
+        }
+      }
+    });
+  }
+
+  deleteUser(user: User) {
+    this.confirmationService.confirm({
+      message: `คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลผู้ใช้ ${user.firstName} ${user.lastName}? การดำเนินการนี้ไม่สามารถย้อนกลับได้`,
+      header: 'ยืนยันการลบ',
+      icon: 'pi pi-trash',
+      acceptLabel: 'ลบข้อมูล',
+      rejectLabel: 'ยกเลิก',
+      acceptButtonStyleClass: 'p-button-danger p-button-sm',
+      rejectButtonStyleClass: 'p-button-text p-button-secondary p-button-sm',
+      accept: async () => {
+        this.loading = true;
+        try {
+          const { error } = await this.supabase
+            .from('profiles')
+            .delete()
+            .eq('id', user.id);
+
+          if (error) throw error;
+
+          this.allUsers = this.allUsers.filter(u => u.id !== user.id);
+          this.messageService.add({ severity: 'success', summary: 'ลบสำเร็จ', detail: 'ลบข้อมูลผู้ใช้เรียบร้อยแล้ว' });
+        } catch (error: any) {
+          console.error('Error deleting user:', error);
+          this.messageService.add({ severity: 'error', summary: 'ข้อผิดพลาด', detail: 'ไม่สามารถลบข้อมูลได้: ' + (error.message || error) });
+        } finally {
+          this.loading = false;
+        }
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
       }
     });
   }

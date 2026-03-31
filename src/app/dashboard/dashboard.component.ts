@@ -1,12 +1,11 @@
 // app/dashboard/dashboard.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 
-// ✅ Fix Imports: Ensure these point to the files created above
 import { DashboardService } from '../service/dashboard.service';
-import { ActivityLog, Metric } from '../models/dashboard.model';
+import { ActivityLog, Metric, LogDisplay } from '../models/dashboard.model';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -25,11 +24,17 @@ import { SidebarModule } from 'primeng/sidebar';
 import { TooltipModule } from 'primeng/tooltip';
 import { TimelineModule } from 'primeng/timeline';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+<<<<<<< HEAD
 import { supabase } from '../supabase.config';
 import { finalize } from 'rxjs/operators';
+=======
+import { createClient } from '@supabase/supabase-js';
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
 import { SiteStateService } from '../service/site/site-state.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+
+// ✅ เพิ่ม Import สำหรับ RxJS Timer
+import { timer, Subject, Subscription } from 'rxjs';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
@@ -43,12 +48,14 @@ import { takeUntil } from 'rxjs/operators';
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
-  // ✅ Provider is optional here if providedIn: 'root' is in service, 
-  // but keeping it here is fine too.
   providers: [DashboardService]
 })
-export class DashboardComponent implements OnInit {
-  supabase = supabase; // ✅ Add this line to fix TS2304: Cannot find name 'supabase'
+export class DashboardComponent implements OnInit, OnDestroy {
+  supabase = createClient(
+    'https://unxcjdypaxxztywplqdv.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
+  );
+
   metrics: Metric[] = [];
   allActivities: ActivityLog[] = [];
 
@@ -57,237 +64,279 @@ export class DashboardComponent implements OnInit {
   historyVisible: boolean = false;
   selectedUserHistory: ActivityLog[] = [];
   currentUser: string = '';
-  loading: boolean = false; // Add loading state
+  loading: boolean = false;
 
-  // ✅ DashboardService will now be found because the file exists
+  // ✅ ตัวแปรสำหรับจัดการ Auto Refresh
+  private refreshSub?: Subscription;
+  private refreshInterval = 10000; // Refresh ทุกๆ 10 วินาที
+  private token: string | null = null;
+  private destroy$ = new Subject<void>();
+
   constructor(
     private dashboardService: DashboardService,
     private siteStateService: SiteStateService,
   ) { }
 
-  private token: string | null = null;
-
-
-
   get selectedSite(): string {
     return this.siteStateService.getCurrentSite();
   }
 
-  private destroy$ = new Subject<void>();
-
-  // ❌ ลบคำว่า async ออกได้เลย เพราะเราไม่ต้อง await แล้ว
   async ngOnInit() {
-    // 1. ติดตามการเปลี่ยน Site จาก Dropdown (ถ้าเปลี่ยนตึก ให้โหลดข้อมูลใหม่)
+    const { data } = await this.supabase.auth.getSession();
+    this.token = data.session?.access_token ?? null;
+
+    if (!this.token) {
+      console.error('No session');
+      return;
+    }
+
+    // เมื่อ Site เปลี่ยน ให้เริ่มการ Refresh ใหม่
     this.siteStateService.site$
       .pipe(takeUntil(this.destroy$))
       .subscribe(siteId => {
         if (this.token) {
-          this.loadDashboardData(siteId, this.token);
+          this.allActivities = []; // ล้างข้อมูลเก่าก่อน
+          this.startAutoRefresh(siteId);
         }
       });
 
-    // 2. ดึง Session ปัจจุบันทันที (กรณีล็อกอินไว้อยู่แล้ว จะได้ไม่ต้องรอ)
-    const { data } = await supabase.auth.getSession();
-    if (data?.session) {
-      this.token = data.session.access_token;
-      const siteId = this.siteStateService.getCurrentSite();
-      if (siteId) {
-         this.loadDashboardData(siteId, this.token);
-      }
-    }
+  // ✅ ฟังก์ชันสำหรับเริ่มการดึงข้อมูลแบบ Auto Refresh
+  startAutoRefresh(siteId: string) {
+    if (this.refreshSub) this.refreshSub.unsubscribe(); // ลบ Timer เก่าทิ้ง
 
-    // 3. 💡 เกราะป้องกันชั้นที่ 2: นั่งรอฟัง Event 
-    // กรณีเพิ่งกด Magic Link เข้ามา Supabase จะใช้เวลาเสี้ยววินาทีในการแกะ URL 
-    // พอแกะเสร็จมันจะตะโกนบอกตรงนี้ เราก็คว้า Token ไปโหลดกราฟต่อเลย!
-    supabase.auth.onAuthStateChange((event, session) => {
-      // เช็คว่ามี Session และ Token ไม่ซ้ำกับของเดิม (ป้องกันการเรียกซ้ำซ้อน)
-      if (session && this.token !== session.access_token) {
-        console.log('✅ Session acquired via Event:', event);
-        this.token = session.access_token;
-        
-        const siteId = this.siteStateService.getCurrentSite();
-        if (siteId) {
-          this.loadDashboardData(siteId, this.token);
-        }
-      } else if (event === 'SIGNED_OUT') {
-        this.token = null; // เคลียร์ Token ทิ้งถ้ากด Log out
-      }
-    });
-  }
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-
-  async loadDashboardData(siteId: string, token: string) {
-    // ✅ Fix TS7006: Add explicit types (Metric[]) to data and (any) to error
-    /*this.dashboardService.getDashboardMetrics().subscribe({
-      next: (data: Metric[]) => this.metrics = data,
-      error: (err: any) => console.error('Failed to load metrics', err)
-    });*/
-
-    this.loading = true; // Start loading
-    // default = วันนี้
-    
-    const date =
-      this.selectedDate
-        ? this.selectedDate.toISOString().slice(0, 10)
-        : null
-
-    this.dashboardService.getAllActivities(date, siteId, token)
+    this.refreshSub = timer(0, this.refreshInterval)
       .pipe(
-        finalize(() => this.loading = false)
+        takeUntil(this.destroy$),
+        tap(() => {
+          // โชว์ Loading เฉพาะตอนที่ข้อมูลยังว่างเปล่า (โหลดครั้งแรก หรือเปลี่ยน Filter)
+          if (this.allActivities.length === 0) {
+            this.loading = true;
+          }
+        }),
+        switchMap(() => {
+          let dateStr: string | null = null;
+          if (this.selectedDate) {
+            const year = this.selectedDate.getFullYear();
+            const month = String(this.selectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(this.selectedDate.getDate()).padStart(2, '0');
+            dateStr = `${year}-${month}-${day}`;
+          }
+          // คืนค่า Observable ของ Request (ยังไม่ subscribe ตรงนี้)
+          return this.dashboardService.getAllActivities(dateStr, siteId, this.token!);
+        })
       )
       .subscribe({
         next: (res: any) => {
-          this.metrics = res.metrics;
-          this.allActivities = res.activities.map((a: any) => {
-
-            // ===== parse revision snapshot =====
-            let revisionRows: any[] = [];
-            let parsedOld: any = null;
-            let parsedNew: any = null;
-
-            if (a.log_type === 'revision') {
-              try {
-                parsedOld = a.old_data
-                  ? (typeof a.old_data === 'string' ? JSON.parse(a.old_data) : a.old_data)
-                  : null;
-
-                parsedNew = a.new_data
-                  ? (typeof a.new_data === 'string' ? JSON.parse(a.new_data) : a.new_data)
-                  : null;
-
-                // ✅ ถ้ามี snapshot เต็ม
-                if (parsedOld && parsedNew) {
-                  const allKeys = new Set([
-                    ...Object.keys(parsedOld),
-                    ...Object.keys(parsedNew)
-                  ]);
-
-                  revisionRows = Array.from(allKeys).map(key => {
-                    const oldVal = parsedOld?.[key] ?? null;
-                    const newVal = parsedNew?.[key] ?? null;
-
-                    return {
-                      field: key,
-                      old: oldVal,
-                      new: newVal,
-                      changed: JSON.stringify(oldVal) !== JSON.stringify(newVal)
-                    };
-                  });
-                }
-
-                // ⚠ fallback ช่วงเปลี่ยนผ่าน (old/new ยัง null)
-                else if (a.changes) {
-                  const changesObj = typeof a.changes === 'string'
-                    ? JSON.parse(a.changes)
-                    : a.changes;
-
-                  revisionRows = Object.keys(changesObj).map(key => ({
-                    field: key,
-                    old: changesObj[key]?.old,
-                    new: changesObj[key]?.new,
-                    changed: true
-                  }));
-                }
-
-              } catch (err) {
-                console.error('Invalid revision JSON:', err);
-              }
-            }
-
-            let parsedChanges = null;
-            if (a.changes) {
-              try {
-                parsedChanges = typeof a.changes === 'string'
-                  ? JSON.parse(a.changes)
-                  : a.changes;
-              } catch (err) {
-                console.error('Invalid changes JSON:', a.changes);
-              }
-            }
-
-
-            let parsedNewData = null;
-            if (a.new_data) {
-              try {
-                parsedNewData = typeof a.new_data === 'string'
-                  ? JSON.parse(a.new_data)
-                  : a.new_data;
-              } catch (err) {
-                console.error('Invalid new_data JSON:', a.new_data);
-              }
-            }
-
-            // ===== parse meta =====
-            let parsedMeta = null;
-
-            if (a.meta) {
-              try {
-                parsedMeta = typeof a.meta === 'string'
-                  ? JSON.parse(a.meta)
-                  : a.meta;
-              } catch (err) {
-                console.error('Invalid meta JSON:', a.meta);
-                parsedMeta = null;
-              }
-            }
-            const entityInfo = parsedMeta?.entity ?? null;
-
-            let contextInfo: any = null;
-
-            if (
-              parsedMeta?.location ||
-              parsedMeta?.device ||
-              parsedMeta?.method ||
-              parsedMeta?.verification
-            ) {
-              contextInfo = {
-                location: parsedMeta?.location,
-                device: parsedMeta?.device,
-                method: parsedMeta?.method,
-                verification: parsedMeta?.verification
-              };
-            }
-
-            const resultInfo = {
-              status: a.status,
-              by: a.user_name,
-              time: a.time
-            };
-
-            return {
-              id: a.id,
-              time: a.time,
-              type: a.entity_type || a.action,
-              action: a.action,
-              category: a.category,
-              status: a.status,
-
-              logType: a.log_type,
-              user: a.user_name,
-
-              entityId: a.entity_id,
-              entityType: a.entity_type,
-
-              entityInfo,
-              contextInfo,
-              resultInfo,
-
-              detail: a.detail,
-              revisionRows,
-              meta: parsedMeta,
-              schedule: parsedNewData,
-              changes: parsedChanges   // ✅ ADD THIS
-            };
-          });
+          this.processResponse(res); // นำข้อมูลไปแปลงรูปร่าง
+          this.loading = false;      // ปิด Loading
         },
-        error: (err: any) => {
-          console.error('Failed to load activities', err);
+        error: (err) => {
+          console.error('Polling error:', err);
+          this.loading = false;
         }
       });
+  }
+
+  // ✅ แยก Logic การจัดการข้อมูล (Parse JSON) ออกมาเพื่อให้ `startAutoRefresh` ดูสะอาด
+  private processResponse(res: any) {
+    this.metrics = res.metrics;
+    
+    this.allActivities = res.activities.map((a: any) => {
+      // ===== parse revision snapshot =====
+      let revisionRows: any[] = [];
+      let parsedOld: any = null;
+      let parsedNew: any = null;
+
+      if (a.log_type === 'revision') {
+        try {
+          parsedOld = a.old_data
+            ? (typeof a.old_data === 'string' ? JSON.parse(a.old_data) : a.old_data)
+            : null;
+
+          parsedNew = a.new_data
+            ? (typeof a.new_data === 'string' ? JSON.parse(a.new_data) : a.new_data)
+            : null;
+
+          // ถ้ามี snapshot เต็ม
+          if (parsedOld && parsedNew) {
+            const allKeys = new Set([
+              ...Object.keys(parsedOld),
+              ...Object.keys(parsedNew)
+            ]);
+
+            revisionRows = Array.from(allKeys).map(key => {
+              const oldVal = parsedOld?.[key] ?? null;
+              const newVal = parsedNew?.[key] ?? null;
+
+              return {
+                field: key,
+                old: oldVal,
+                new: newVal,
+                changed: JSON.stringify(oldVal) !== JSON.stringify(newVal)
+              };
+            });
+          }
+          // fallback ช่วงเปลี่ยนผ่าน (old/new ยัง null)
+          else if (a.changes) {
+            const changesObj = typeof a.changes === 'string'
+              ? JSON.parse(a.changes)
+              : a.changes;
+
+            revisionRows = Object.keys(changesObj).map(key => ({
+              field: key,
+              old: changesObj[key]?.old,
+              new: changesObj[key]?.new,
+              changed: true
+            }));
+          }
+        } catch (err) {
+          console.error('Invalid revision JSON:', err);
+        }
+      }
+
+      let parsedChanges = null;
+      if (a.changes) {
+        try {
+          parsedChanges = typeof a.changes === 'string'
+            ? JSON.parse(a.changes)
+            : a.changes;
+        } catch (err) {
+          console.error('Invalid changes JSON:', a.changes);
+        }
+      }
+
+      let parsedNewData = null;
+      if (a.new_data) {
+        try {
+          parsedNewData = typeof a.new_data === 'string'
+            ? JSON.parse(a.new_data)
+            : a.new_data;
+        } catch (err) {
+          console.error('Invalid new_data JSON:', a.new_data);
+        }
+      }
+
+      // ===== parse meta =====
+      let parsedMeta = null;
+      if (a.meta) {
+        try {
+          parsedMeta = typeof a.meta === 'string'
+            ? JSON.parse(a.meta)
+            : a.meta;
+        } catch (err) {
+          console.error('Invalid meta JSON:', a.meta);
+          parsedMeta = null;
+        }
+      }
+
+      let entityInfo = parsedMeta?.entity ?? null;
+
+      // fallback สำหรับ reservation
+      if (!entityInfo && a.entity_type === 'reservation') {
+        entityInfo = parsedNewData || parsedChanges || null;
+      }
+
+      let contextInfo: any = null;
+      if (parsedMeta?.context) {
+        contextInfo = parsedMeta.context;
+      } else if (parsedNewData?.booking_type) {
+        contextInfo = { booking_type: parsedNewData.booking_type };
+      } else if (
+        parsedMeta?.location ||
+        parsedMeta?.device ||
+        parsedMeta?.method ||
+        parsedMeta?.verification
+      ) {
+        contextInfo = {
+          location: parsedMeta?.location,
+          device: parsedMeta?.device,
+          method: parsedMeta?.method,
+          verification: parsedMeta?.verification
+        };
+      }
+
+      const mappedLog = {
+        id: a.id,
+        time: a.time,
+        type: a.entity_type || a.action,
+        action: a.action,
+        category: a.category,
+        status: a.status,
+        logType: a.log_type,
+        user: a.user_name,
+        entityId: a.entity_id,
+        entityType: a.entity_type,
+        detail: a.detail,
+        revisionRows,
+        meta: parsedMeta,
+        schedule: parsedNewData,
+        changes: parsedChanges
+      } as ActivityLog;
+
+      // 🌟 ย่อยข้อมูลก่อนส่งให้ HTML
+      mappedLog.logDisplay = this.transformLogForDisplay(mappedLog);
+
+      return mappedLog;
+    });
+
+    // หากเปิดหน้าต่าง User History ค้างไว้ ให้อัปเดตข้อมูลของ User คนนั้นด้วยแบบ Real-time
+    if (this.historyVisible && this.currentUser) {
+        this.selectedUserHistory = this.allActivities.filter(a => a.user === this.currentUser);
+    }
+  }
+
+  // ==========================================
+  // 🌟 THE TRANSFORMER: ฟังก์ชันย่อยข้อมูลสำหรับ UI
+  // ==========================================
+  private transformLogForDisplay(log: ActivityLog): LogDisplay {
+    const d: LogDisplay = {
+      title: this.formatAction(log.action),
+      subtitle: this.formatEntity(log.entityType),
+      icon: this.getActivityIcon(log.type),
+      attributes: [],
+      contexts: [],
+      hasChanges: log.logType === 'revision' && !!log.revisionRows?.length
+    };
+
+    const entity = log.meta?.entity || {};
+    const context = log.meta?.context || {};
+
+    // 1. จัดการ Attributes หลัก
+    Object.keys(entity).forEach(key => {
+      if (key === 'type' && log.entityType !== 'slots') return;
+
+      let val = entity[key];
+      let color = '';
+
+      if (['status', 'status_to', 'current_status', 'set_status'].includes(key)) {
+        color = this.getTextColorForStatus(val);
+        val = String(val).toUpperCase().replace(/_/g, ' ');
+      }
+
+      if (key === 'action_label') {
+        val = String(val).replace(/_/g, ' ');
+        color = val.includes('REMOVE') ? 'text-red-600 font-bold' : 'text-green-600 font-bold';
+      }
+
+      d.attributes.push({ label: this.formatLabel(key), value: val, color });
+    });
+
+    // 2. จัดการ Context
+    Object.keys(context).forEach(key => {
+      let val = context[key];
+      if (typeof val === 'string' && val.includes('T') && val.includes('+00:00')) {
+        const date = new Date(val);
+        val = date.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+      }
+      d.contexts.push({ label: this.formatLabel(key), value: val });
+    });
+
+    // 3. Fallback
+    if (d.attributes.length === 0 && log.detail) {
+      d.attributes.push({ label: 'Detail', value: log.detail, color: '' });
+    }
+
+    return d;
   }
 
   get normalActivities() {
@@ -297,8 +346,6 @@ export class DashboardComponent implements OnInit {
   get abnormalActivities() {
     return this.allActivities.filter(a => a.category === 'abnormal');
   }
-
-  
 
   viewUserHistory(userName: string) {
     this.currentUser = userName;
@@ -319,6 +366,29 @@ export class DashboardComponent implements OnInit {
       default: return 'pi pi-info-circle';
     }
   }
+
+  private formatLabel(key: string): string {
+    const customLabels: Record<string, string> = {
+      plate: 'Plate', slot: 'Slot ID', floor: 'Floor', vehicle_type: 'Vehicle Type',
+      status_to: 'New Status', status_from: 'Previous', status: 'Status',
+      start_time: 'Start Time', end_time: 'End Time', booking_type: 'Booking Type',
+      color: 'Color', model: 'Model', province: 'Province', action_label: 'Action',
+      current_status: 'Current Status', reason: 'Reason', duration: 'Duration',
+      target_date: 'Target Date', period: 'Period', set_status: 'Set Status'
+    };
+    if (customLabels[key]) return customLabels[key];
+    return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  private getTextColorForStatus(status: string): string {
+    if (!status) return '';
+    const s = String(status).toLowerCase();
+    if (s.includes('success') || s.includes('confirm') || s.includes('available')) return 'text-green-600 font-bold';
+    if (s.includes('cancel') || s.includes('delete') || s.includes('remove') || s.includes('denied')) return 'text-red-600 font-bold';
+    if (s.includes('maintenance') || s.includes('pending')) return 'text-orange-600 font-bold';
+    return 'text-blue-600 font-bold';
+  }
+
   formatAction(action?: string): string {
     if (!action) return '';
 
@@ -326,26 +396,19 @@ export class DashboardComponent implements OnInit {
       vehicle_delete: 'Vehicle Deleted',
       vehicle_create: 'Vehicle Created',
       vehicle_update: 'Vehicle Updated',
-
       slot_override_available: 'Slot Availability Override',
       slot_override_block: 'Slot Blocked',
-
       reservation_create: 'Reservation Created',
       reservation_cancel: 'Reservation Cancelled',
-
       login_success: 'User Login',
       login_failed: 'Login Failed'
     };
 
-    if (actionMap[action]) {
-      return actionMap[action];
-    }
+    if (actionMap[action]) return actionMap[action];
 
-    // fallback auto format
-    return action
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase());
+    return action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
+
   formatEntity(type?: string): string {
     if (!type) return 'Entity';
 
@@ -358,14 +421,17 @@ export class DashboardComponent implements OnInit {
     };
 
     return map[type] || type;
-}
+  }
 
+  // ✅ แก้ไข onDateChange ให้มาเรียก startAutoRefresh
   onDateChange() {
     const siteId = this.siteStateService.getCurrentSite();
     if (this.token) {
-      this.loadDashboardData(siteId, this.token);
+      this.allActivities = []; // สั่งเคลียร์เพื่อให้ Loading หมุน
+      this.startAutoRefresh(siteId);
     }
   }
+
   getStatusSeverity(status: string): "success" | "info" | "warning" | "danger" | "secondary" | "contrast" | undefined {
     switch (status) {
       case 'success': return 'success';
@@ -378,5 +444,14 @@ export class DashboardComponent implements OnInit {
 
   getActivitySeverity(category: string): "success" | "danger" | "info" | "warning" | "secondary" | "contrast" | undefined {
     return category === 'normal' ? 'success' : 'danger';
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+    // ✅ ทำลาย Timer เมื่อปิด Component เพื่อป้องกัน Memory Leak
+    if (this.refreshSub) {
+      this.refreshSub.unsubscribe();
+    }
   }
 }

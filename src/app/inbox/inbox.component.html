@@ -124,6 +124,7 @@
             </p-tag>
           </td>
 
+<<<<<<< HEAD
           <td class="font-medium">
             <div *ngIf="building.price; else noPrice" class="flex flex-column gap-1 text-xs">
               <span *ngIf="building.price.Host !== undefined" class="text-green-600">
@@ -140,6 +141,19 @@
             <ng-template #noPrice>
               <span class="text-500 text-xs">ยังไม่ระบุราคา</span>
             </ng-template>
+=======
+          <!-- ราคา -->
+          <!--<td class="text-blue-500 font-medium whitespace-pre-line">-->
+          <td style="white-space: pre-line;">
+            <!--<ng-container *ngIf="building.price === 0">
+              ฿0
+            </ng-container>
+
+            <ng-container *ngIf="building.price > 0">
+              ฿{{ building.price | number }} {{ building.priceInfo }}
+            </ng-container>-->
+            {{ building.priceText }}
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
           </td>
 
           <td class="text-500">

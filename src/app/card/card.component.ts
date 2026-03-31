@@ -157,39 +157,21 @@ export class CardComponent implements OnInit, OnDestroy {
     // No date filter needed as per user request
     this.reservationService.getUserReservations(token).subscribe({
       next: (res: any) => {
-        // Transform 'ยกเลิก' to 'หมดอายุ' as per requirement
-        this.allReservations = res.reservations.map((r: any) => {
-          if (r.status === 'ยกเลิก') {
-            return { ...r, status: 'หมดอายุ' };
-          }
-          return r;
-        });
+        // 1. เก็บข้อมูลดิบทั้งหมดที่ได้จาก Edge Function
+        this.allReservations = res.reservations; 
+        
+        // 2. ดึง Metrics มาแสดงบน Card (ไม่ต้องคำนวณเองแล้ว)
+        this.metrics = res.metrics;
 
-        // Manual Metric Calculation
-        const total = this.allReservations.length;
-        const active = this.allReservations.filter(r => r.status === 'กำลังใช้งาน').length;
-        const pending = this.allReservations.filter(r => r.status === 'จองล่วงหน้า').length;
-        // Include 'หมดอายุ' and legacy 'หมดอายุ/สำเร็จ' in expired count
-        const expired = this.allReservations.filter(r => ['หมดอายุ', 'expired', 'หมดอายุ/สำเร็จ'].includes(r.status)).length;
-        const completed = this.allReservations.filter(r => ['สำเร็จ', 'completed'].includes(r.status)).length;
-        const cancelled = this.allReservations.filter(r => ['ยกเลิก', 'cancelled'].includes(r.status)).length;
-
-        this.metrics = [
-          { title: 'รายการจองทั้งหมด', value: total.toString(), subtext: 'รายการ', icon: 'pi pi-list', color: 'blue' },
-          { title: 'สำเร็จ', value: completed.toString(), subtext: 'เรียบร้อย', icon: 'pi pi-check', color: 'purple' },
-          { title: 'กำลังใช้งาน', value: active.toString(), subtext: 'ขณะนี้', icon: 'pi pi-check-circle', color: 'green' },
-          { title: 'จองล่วงหน้า', value: pending.toString(), subtext: 'ยังไม่ถึงเวลา', icon: 'pi pi-clock', color: 'yellow' },
-          { title: 'หมดอายุ', value: expired.toString(), subtext: 'เลยเวลา', icon: 'pi pi-exclamation-circle', color: 'gray' },
-          { title: 'ยกเลิก', value: cancelled.toString(), subtext: 'ยกเลิกแล้ว', icon: 'pi pi-times-circle', color: 'red' }
-        ];
-
-        this.filterReservations(this.selectedFilter); // Apply current filter
+        // 3. สั่งให้ Filter ทำงานทันที (เพื่อให้ตารางแสดงผลตามสถานะที่เลือกอยู่)
+        this.applyFilters(); 
+        
         this.loading = false;
       },
       error: (err: any) => {
         console.error('Failed to load reservations', err);
         this.loading = false;
-      },
+      }
     });
   }
 
@@ -221,38 +203,26 @@ export class CardComponent implements OnInit, OnDestroy {
   }
 
   applyFilters() {
+    // 1. เริ่มจากข้อมูลทั้งหมดที่โหลดมาจาก Backend
     let filtered = [...this.allReservations];
 
-    // 1. Filter by Status (selectedFilter)
+    // 2. ดึงชื่อหัวข้อจาก Card ที่เรากด (เช่น "รอดำเนินการ", "เข้าจอดแล้ว")
     const title = this.selectedFilter;
-    const statusMap: { [key: string]: string | string[] } = {
-      'รายการจองทั้งหมด': 'ALL',
-      'กำลังใช้งาน': 'กำลังใช้งาน',
-      'จองล่วงหน้า': 'จองล่วงหน้า',
-      'หมดอายุ': ['หมดอายุ', 'expired', 'หมดอายุ/สำเร็จ'],
-      'สำเร็จ': ['สำเร็จ', 'completed'],
-      'ยกเลิก': ['ยกเลิก', 'cancelled'],
-      'หมดอายุ/สำเร็จ': ['หมดอายุ', 'สำเร็จ', 'หมดอายุ/สำเร็จ', 'completed', 'expired']
-    };
 
-    const targetStatus = statusMap[title];
-
-    if (targetStatus && targetStatus !== 'ALL') {
-      if (Array.isArray(targetStatus)) {
-        filtered = filtered.filter(r => targetStatus.includes(r.status));
-      } else {
-        filtered = filtered.filter(r => r.status === targetStatus);
-      }
+    // 3. Logic การ Filter ตาม Status
+    // ถ้ากด "จองทั้งหมด" ไม่ต้องกรองอะไร (ปล่อยผ่าน)
+    // ถ้ากดอันอื่น ให้เอา status ในตาราง (r.status) มาเทียบกับชื่อปุ่ม (title) ได้เลย
+    if (title && title !== 'จองทั้งหมด' && title !== 'รายการจองทั้งหมด') {
+      filtered = filtered.filter(r => r.status === title);
     }
 
-    // 2. Filter by Date (selectedDate)
+    // 4. Filter ตามวันที่ (คงไว้ตามเดิม)
     if (this.selectedDate) {
       const filterDateStr = this.formatDateToThai(this.selectedDate);
-      // Filter by 'date' (Booking Date) or 'reserved_at_date' based on requirement.
-      // Usually "Date Filter" on a list refers to the main date column.
       filtered = filtered.filter(r => r.date === filterDateStr);
     }
 
+    // 5. อัปเดตข้อมูลที่จะแสดงในตาราง
     this.reservations = filtered;
   }
 

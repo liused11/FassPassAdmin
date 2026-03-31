@@ -171,3 +171,47 @@
   word-break: break-word;
   overflow-wrap: anywhere;
 }
+
+
+/* ===== Revision Table Clean ===== */
+.revision-table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.revision-table th,
+.revision-table td {
+  vertical-align: top;
+  padding: 0.5rem;
+}
+
+/* 🔥 ปรับสัดส่วนใหม่ */
+.revision-table th:nth-child(1),
+.revision-table td:nth-child(1) {
+  width: 22%;
+  font-weight: 600;
+  color: #374151;
+
+  /* 👇 กัน field เละ */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.revision-table th:nth-child(2),
+.revision-table td:nth-child(2) {
+  width: 39%;
+}
+
+.revision-table th:nth-child(3),
+.revision-table td:nth-child(3) {
+  width: 39%;
+}
+
+/* 👇 ให้ value wrap สวย */
+.revision-table td {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}

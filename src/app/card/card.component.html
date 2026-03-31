@@ -19,7 +19,6 @@
   </div>
 
 
-
   <div class="bg-white border-round-xl border-1 border-gray-100 shadow-3 overflow-hidden flex flex-column">
 
     <div
@@ -106,7 +105,7 @@
           <td>
             <div class="flex flex-column">
               <span class="font-semibold">{{ res.floor_name || ('ชั้น ' + res.floor) || '-' }}</span>
-              <span class="text-xs text-gray-500">Zone {{ getZone(res.room) }}</span>
+              <span class="text-xs text-gray-500">{{ res.zone_name }}</span>
             </div>
           </td>
           <td>{{ res.type }}</td>

@@ -1,0 +1,26 @@
+<div class="flex align-items-center justify-content-center min-h-screen surface-ground p-4">
+  <p-card [style]="{ width: '100%', maxWidth: '400px', padding: '1rem' }" styleClass="shadow-4 border-round-xl">
+    
+    <div class="text-center mb-5">
+      <i class="pi pi-envelope text-primary text-6xl mb-3"></i>
+      <div class="text-900 text-3xl font-bold mb-2">เข้าสู่ระบบ</div>
+      <span class="text-600 font-medium">เข้าใช้งานด้วย Magic Link แบบไร้รหัสผ่าน</span>
+    </div>
+
+    <div class="flex flex-column gap-3 mb-4">
+      <div class="flex flex-column gap-2">
+        <label htmlFor="email" class="font-semibold text-700">อีเมล (Email)</label>
+        <span class="p-input-icon-left w-full">
+            <i class="pi pi-at"></i>
+            <input pInputText id="email" type="email" [(ngModel)]="email" placeholder="name@example.com" class="w-full" (keyup.enter)="sendMagicLink()" />
+        </span>
+        <small class="text-500">ระบบจะส่งลิงก์สำหรับเข้าสู่ระบบไปที่อีเมลนี้</small>
+      </div>
+    </div>
+
+    <p-button label="รับลิงก์เข้าสู่ระบบ (Send Magic Link)" icon="pi pi-link" styleClass="w-full p-button-primary" [loading]="loading" (onClick)="sendMagicLink()"></p-button>
+
+  </p-card>
+
+  <p-toast></p-toast>
+</div>

@@ -1,7 +1,7 @@
 // app/inbox/inbox.component.ts
 import { ParkingEditSidebarComponent } from './inbox-edit-sidebar/parking-edit-sidebar.component';
 import { ParkingHistorySidebarComponent } from './inbox-history-sidebar/parking-history-sidebar.component';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +22,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ParkingHistoryItem } from '../models/parking-history.model';
 import { SiteStateService } from '../service/site/site-state.service';
-import { Subject } from 'rxjs';
+import { Subject, timeout, catchError, of } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
     
 @Component({
@@ -49,29 +49,38 @@ import { takeUntil } from 'rxjs/operators';
   templateUrl: './inbox.component.html',
   styleUrls: ['./inbox.component.css']
 })
-export class InboxComponent implements OnInit, OnDestroy {
+export class InboxComponent implements OnInit {
       
+
   supabase = createClient(
     'https://unxcjdypaxxztywplqdv.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGNqZHlwYXh4enR5d3BscWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NTA1NTQsImV4cCI6MjA3NzMyNjU1NH0.vf6ox-MLQsyzQgPCF9t6t_yPbcoMhJJNkJd1A-mS7WA'
   );
-  
   sessionToken: string = '';
   originalBuilding: any = null;
   metrics: any[] = [];
-  
   buildings: any[] = [];
-  selectedBuildings: any[] = [];
 
+  // ฟิลเตอร์โหมด (เริ่มต้นเป็นรายการที่จอดรถ)
+  selectedMode: 'parking' | 'visitor' = 'parking';
+  modeOptions = [
+    { label: 'รายการที่จอดรถ', value: 'parking' },
+    { label: 'รายการอาคารผู้เยี่ยมชม', value: 'visitor' }
+  ];
+
+  selectedBuildings: any[] = [];
   loading: boolean = false;
       
-  sidebarEditVisible: boolean = false;
+  sidebarEditVisible: boolean = false;       // ✅ ADD
   sidebarHistoryVisible: boolean = false;
-  selectedBuilding: any = null;
+  selectedBuilding: any = null;          // ✅ ADD
 
   historyList: ParkingHistoryItem[] = [];
   historyOffset = 0;
   historyLimit = 5;
+  errorMessage: string | null = null;
+  editError: string | null = null;
+      
 
   constructor(
     private parkingService: ParkingService,
@@ -81,30 +90,30 @@ export class InboxComponent implements OnInit, OnDestroy {
   private refreshInterval: any;
   private currentSiteId: string = 'all';
   private destroy$ = new Subject<void>();
-
   async ngOnInit() {
-    this.loading = true;
+    this.loading = true; // Start loading
     const { data } = await this.supabase.auth.getSession();
     const token = data.session?.access_token
     if (!token) {
       console.error('No session');
-      this.loading = false;
       return;
     }
 
-    this.sessionToken = token; 
+    this.sessionToken = token; // ✅ เก็บไว
         
     // subscribe site
     this.siteState.site$
       .pipe(takeUntil(this.destroy$))
       .subscribe(site => {
         this.currentSiteId = site;
-        this.loadDashboard(site); // ✅ ลบ token ออก
+        this.loadDashboard(token, site);
       });
 
     // auto refresh
     this.refreshInterval = setInterval(() => {
-      this.loadDashboard(this.currentSiteId); // ✅ ลบ token ออก
+      if (!this.errorMessage) {
+        this.loadDashboard(token, this.currentSiteId);
+      }
     }, 10000);
   }
 
@@ -116,22 +125,37 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadDashboard(siteId: string) {
-    // ✅ ดึง Token ใหม่เสมอ ป้องกัน 401 Unauthorized
-    const { data: { session } } = await this.supabase.auth.getSession();
-    const currentToken = session?.access_token;
 
-    if (!currentToken) {
-      console.warn('ไม่พบ Session หรือ Token หมดอายุ');
-      this.loading = false;
-      return;
-    }
+  async loadDashboard(token: string, siteId: string) {
 
-    this.parkingService.getDashboard(currentToken, siteId)
+    this.parkingService.getDashboard(token, siteId)
+      .pipe(
+        timeout(10000), // ⛔ กัน hang
+        catchError((err) => {
+
+          console.error(err);
+
+          if (err.name === 'TimeoutError') {
+            this.errorMessage = '⏱️ เซิร์ฟเวอร์ตอบช้าเกินไป';
+          } else if (err.status === 0) {
+            this.errorMessage = '🌐 ไม่มีอินเทอร์เน็ต';
+          } else {
+            this.errorMessage = '⚠️ โหลดข้อมูลไม่สำเร็จ';
+          }
+
+          this.loading = false;
+
+          return of(null); // ❗ สำคัญ
+        })
+      )
       .subscribe(res => {
-        console.log('📌 ข้อมูลจาก API:', res);
+        if (!res) return;
+        console.log(res);
+        
+        this.errorMessage = null; // ✅ clear เฉพาะ success
 
         this.metrics = res.metrics ?? [];
+
         const summary = res.parking_summary ?? [];
 
         this.buildings = summary.map((b: any) => ({
@@ -140,48 +164,82 @@ export class InboxComponent implements OnInit, OnDestroy {
           images: b.images ?? [],
           available: b.total - b.used,
           total: b.total,
-          types: b.types ?? [],  
+          types: b.types ?? [],  // ประเภท
           detail: `เวลาเปิด-ปิด: ${b.open_time} - ${b.close_time}`,
           address: b.address,
           status: b.status,
-<<<<<<< HEAD
-          price: b.price, // ✅ ใช้ b.price ที่ดึงค่ามาจาก role_price ฝั่ง Backend
-=======
           // ✅ เปลี่ยนตรงนี้
           priceText: b.price_text,
->>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
           rate: b.rate,
           openTime: b.open_time,
           closeTime: b.close_time
         }));
-        
-        this.loading = false;
-      }, err => {
-        console.error('API Error:', err);
-        this.loading = false;
+
+        // ไม่เพิ่มอาคารผู้เยี่ยมชมแบบ static เพื่อใช้ data จาก backend ตามจริง
+        this.loading = false; // Stop loading
       });
+  }
+
+
+  get filteredBuildings() {
+    if (this.selectedMode === 'visitor') {
+      return this.buildings.filter(b => b.name?.trim() === 'อาคาร 12 ชั้น (ตึกโหล)');
+    }
+    return this.buildings.filter(b => b.name?.trim() !== 'อาคาร 12 ชั้น (ตึกโหล)');
+  }
+
+  get parkingLocationsCount() {
+    return this.buildings.filter(b => b.name?.trim() !== 'อาคาร 12 ชั้น (ตึกโหล)').length;
+  }
+
+  get visitorLocationsCount() {
+    return this.buildings.filter(b => b.name?.trim() === 'อาคาร 12 ชั้น (ตึกโหล)').length;
+  }
+
+  get totalLocationsCount() {
+    return this.buildings.length;
+  }
+  
+  retry() {
+    this.errorMessage = null;
+    this.loading = true;
+
+    this.loadDashboard(this.sessionToken, this.currentSiteId);
   }
 
   async openEdit(building: any) { 
     this.sidebarEditVisible = true;
     this.loading = true;
+    this.editError = null;   // ✅ reset
     this.selectedBuilding = null;
 
     const {data: { session }} = await this.supabase.auth.getSession();
     const token = session?.access_token;
-        
+
     this.parkingService
       .getBuildingById(building.id, token!)
+      .pipe(
+        timeout(8000),
+        catchError((err) => {
+          if (err.name === 'TimeoutError') {
+            this.editError = 'timeout';
+          } else if (err.status === 0) {
+            this.editError = 'network';
+          } else {
+            this.editError = 'server';
+          }
+
+          this.loading = false;
+          return of(null);
+        })
+      )
       .subscribe({
         next: (res: any) => { 
           this.selectedBuilding = res.data; 
-          this.originalBuilding = JSON.parse(JSON.stringify(res.data));
+          this.originalBuilding = JSON.parse(JSON.stringify(res.data)); // clone กัน reference
           this.loading = false; 
-        },
-        error: (err) => { 
-            console.error('Error fetching building:', err); 
-            this.loading = false; 
-        }    
+ 
+        }   
       }); 
   }
 
@@ -195,8 +253,8 @@ export class InboxComponent implements OnInit, OnDestroy {
 
     this.loadHistory();
   }
-  
   loadHistory(loadMore = false) {
+
     if (!this.selectedBuilding) return;
 
     this.loading = true;
@@ -217,6 +275,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (res) => {
+
           const mapped = res.data.map((item: any) => ({
             id: item.id,
             logType: item.log_type,
@@ -265,6 +324,7 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   async handleSave(formData: any) {
+
     const { data: { session } } = await this.supabase.auth.getSession();
     const token = session?.access_token;
     if (!token|| !this.originalBuilding) return;
@@ -275,12 +335,8 @@ export class InboxComponent implements OnInit, OnDestroy {
       address: formData.address,
       open_time: formData.openTime,
       close_time: formData.closeTime,
-<<<<<<< HEAD
-      role_price: formData.hourlyRate, // ✅ แก้เป็น role_price เผื่อไว้ (ขึ้นอยู่กับฝั่ง Backend รับค่าอะไร)
-=======
->>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
       is_active: formData.isActive,
-      images: formData.images ?? [],
+      images: formData.images ?? [], // เก็บ URL รูปภาพ
       // ✅ เพิ่ม role_prices เข้าไป
       role_prices: formData.role_prices
     };
@@ -288,13 +344,9 @@ export class InboxComponent implements OnInit, OnDestroy {
     const originalBuilding = {
       name: this.originalBuilding.name,
       address: this.originalBuilding.address,
-      open_time: this.originalBuilding.openTime,
-      close_time: this.originalBuilding.closeTime,
-<<<<<<< HEAD
-      role_price: this.originalBuilding.hourlyRate, // ✅ สอดคล้องกับด้านบน
-=======
->>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
-      is_active: this.originalBuilding.isActive,
+      open_time: this.originalBuilding.open_time || this.originalBuilding.openTime,
+      close_time: this.originalBuilding.close_time || this.originalBuilding.closeTime,
+      is_active: this.originalBuilding.is_active ?? this.originalBuilding.isActive,
       images: this.originalBuilding.images ?? [],
       // ✅ ดึงจากก้อนต้นฉบับที่เก็บไว้ตอน openEdit
       role_prices: this.originalBuilding.role_prices
@@ -310,36 +362,36 @@ export class InboxComponent implements OnInit, OnDestroy {
       editedBuilding
     );
 
+    // 🔥 ถ้าไม่มีอะไรเปลี่ยน ไม่ต้องยิง API
     if (entities.length === 0) {
       this.sidebarEditVisible = false;
       return;
     }
 
+    this.loading = true; // แสดง loading ขณะบันทึก
     this.parkingService
       .updateEntities(entities, token)
       .subscribe({
         next: () => {
           this.sidebarEditVisible = false;
-          this.loadDashboard(this.currentSiteId); // ✅ ลบ token ออก
+          this.loadDashboard(token, this.currentSiteId);
         },
         error: (err) => {
+          this.loading = false;
           console.error('Update failed:', err);
-          console.error(err.error);   
+          console.error(err.error);   // 👈 เพิ่มบรรทัดนี้
         }
       });
   }
-  
   getChangedFields(original: any, edited: any) {
     const changes: any = {};
 
     Object.keys(edited).forEach(key => {
+          
       const originalValue = original[key];
       const editedValue = edited[key];
 
-<<<<<<< HEAD
-=======
       // Compare array
->>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
       if (Array.isArray(originalValue) && Array.isArray(editedValue)) {
         if (JSON.stringify(originalValue.sort()) !== JSON.stringify(editedValue.sort())) {
           changes[key] = editedValue;
@@ -362,7 +414,6 @@ export class InboxComponent implements OnInit, OnDestroy {
 
     return changes;
   }
-  
   getSeverity(status: string) {
     switch (status) {
       case 'ใช้งานอยู่': return 'success';

@@ -125,14 +125,10 @@ export class AppComponent implements OnInit, OnDestroy {
       { label: 'อาคาร', icon: 'pi pi-building', route: '/buildings' },
       { label: 'จัดการการจอง', icon: 'pi pi-th-large', route: '/reserve' },
       { label: 'จัดการผู้ใช้งาน', icon: 'pi pi-user', route: '/customer' },
-<<<<<<< HEAD
-      { label: 'จัดการลานจอดรถ', icon: 'pi pi-car', route: '/parking' },
-=======
       // { label: 'แจ้งเตือน', icon: 'pi pi-comment', route: '/chat' },
       // { label: 'Video', icon: 'pi pi-video', route: '/video' },
       //{ label: 'จัดการลานจอดรถ', icon: 'pi pi-car', route: '/parking' },
       // { label: 'จัดการโซน', icon: 'pi pi-map', route: '/zones' }
->>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
     ];
 
     this.modalService.initListener();

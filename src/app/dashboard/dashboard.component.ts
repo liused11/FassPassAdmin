@@ -24,17 +24,14 @@ import { SidebarModule } from 'primeng/sidebar';
 import { TooltipModule } from 'primeng/tooltip';
 import { TimelineModule } from 'primeng/timeline';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-<<<<<<< HEAD
-import { supabase } from '../supabase.config';
-import { finalize } from 'rxjs/operators';
-=======
 import { createClient } from '@supabase/supabase-js';
->>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
 import { SiteStateService } from '../service/site/site-state.service';
 
 // ✅ เพิ่ม Import สำหรับ RxJS Timer
-import { timer, Subject, Subscription } from 'rxjs';
-import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { timer, Subject, Subscription, of } from 'rxjs';
+import { switchMap, takeUntil, tap, timeout, catchError, finalize } from 'rxjs/operators';
+
+
 
 @Component({
   selector: 'app-dashboard',
@@ -65,6 +62,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   selectedUserHistory: ActivityLog[] = [];
   currentUser: string = '';
   loading: boolean = false;
+  errorMessage: string | null = null;
 
   // ✅ ตัวแปรสำหรับจัดการ Auto Refresh
   private refreshSub?: Subscription;
@@ -99,6 +97,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.startAutoRefresh(siteId);
         }
       });
+  }
 
   // ✅ ฟังก์ชันสำหรับเริ่มการดึงข้อมูลแบบ Auto Refresh
   startAutoRefresh(siteId: string) {
@@ -122,13 +121,32 @@ export class DashboardComponent implements OnInit, OnDestroy {
             dateStr = `${year}-${month}-${day}`;
           }
           // คืนค่า Observable ของ Request (ยังไม่ subscribe ตรงนี้)
-          return this.dashboardService.getAllActivities(dateStr, siteId, this.token!);
+          return this.dashboardService.getAllActivities(dateStr, siteId, this.token!).pipe(
+            timeout(15000),
+            catchError(err => {
+              if (err.name === 'TimeoutError') {
+                this.errorMessage = '⏱️ โหลดข้อมูลไม่สำเร็จ (เซิร์ฟเวอร์ไม่ตอบ)';
+              } else if (err.status === 0) {
+                this.errorMessage = '🌐 ไม่สามารถเชื่อมต่ออินเทอร์เน็ต';
+              } else {
+                this.errorMessage = '⚠️ ระบบมีปัญหา';
+              }
+
+              return of(null);
+            }),
+            finalize(() => {
+              this.loading = false;
+            })
+          );
         })
       )
       .subscribe({
         next: (res: any) => {
-          this.processResponse(res); // นำข้อมูลไปแปลงรูปร่าง
-          this.loading = false;      // ปิด Loading
+          if (res) {
+            this.errorMessage = null;   // ✅ clear เฉพาะตอน success
+            this.processResponse(res);
+          }
+          this.loading = false;
         },
         error: (err) => {
           console.error('Polling error:', err);
@@ -308,7 +326,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       let val = entity[key];
       let color = '';
 
-      if (['status', 'status_to', 'current_status', 'set_status'].includes(key)) {
+      if (['status', 'status_to', 'status_from', 'current_status', 'set_status'].includes(key)) {
         color = this.getTextColorForStatus(val);
         val = String(val).toUpperCase().replace(/_/g, ' ');
       }

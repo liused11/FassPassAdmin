@@ -1,4 +1,3 @@
-<!-- inbox.component.html -->
 <div class="flex flex-column gap-4 w-full p-4 surface-ground min-h-screen relative">
   <div *ngIf="loading"
     class="fixed top-0 left-0 w-full h-full flex align-items-center justify-content-center bg-white-alpha-70"
@@ -113,7 +112,6 @@
     </div>
   </div>
 
-
   <div class="bg-white border-round-xl border-1 border-100 shadow-3 overflow-hidden flex flex-column">
 
     <div class="flex flex-wrap align-items-center justify-between p-4 gap-4 border-bottom-1 border-100">
@@ -151,7 +149,6 @@
             <p-tableCheckbox [value]="building"></p-tableCheckbox>
           </td>
 
-          <!-- สถานที่ -->
           <td>
             <div class="flex align-items-center gap-3">
               <div class="w-4rem h-3rem border-round overflow-hidden border-1 border-gray-200">
@@ -174,48 +171,55 @@
             </div>
           </td>
 
-          <!-- ที่อยู่ -->
           <td class="text-500">
             {{ building.address || 'ยังไม่ได้ระบุที่อยู่' }}
           </td>
 
           <td class="text-center font-semibold">
-
-            <!-- ถ้ามีช่องว่าง -->
             <ng-container *ngIf="building.available > 0; else fullBlock">
-
               <span class="text-blue-600">
                 {{ building.available }}
               </span>
-
               /{{ building.total }}
-
             </ng-container>
 
-            <!-- ถ้าเต็ม -->
             <ng-template #fullBlock>
               <span class="text-red-600">
                 เต็ม
               </span>
-
               /{{ building.total }}
             </ng-template>
-
           </td>
 
-          <!-- ประเภท -->
           <td>
             <ul class="list-none p-0 m-0 text-sm text-600">
               <li *ngFor="let t of building.types">• {{ t }}</li>
             </ul>
           </td>
 
-          <!-- สถานะ (ถ้ายังอยากแสดง) -->
           <td>
             <p-tag [value]="building.status" [severity]="getSeverity(building.status)">
             </p-tag>
           </td>
 
+<<<<<<< HEAD
+          <td class="font-medium">
+            <div *ngIf="building.price; else noPrice" class="flex flex-column gap-1 text-xs">
+              <span *ngIf="building.price.Host !== undefined" class="text-green-600">
+                <i class="pi pi-shield text-xs mr-1"></i>Host: ฿{{ building.price.Host }}
+              </span>
+              <span *ngIf="building.price.User !== undefined" class="text-blue-600">
+                <i class="pi pi-user text-xs mr-1"></i>User: ฿{{ building.price.User }}
+              </span>
+              <span *ngIf="building.price.Visitor !== undefined" class="text-orange-600">
+                <i class="pi pi-users text-xs mr-1"></i>Visitor: ฿{{ building.price.Visitor }}
+              </span>
+            </div>
+            
+            <ng-template #noPrice>
+              <span class="text-500 text-xs">ยังไม่ระบุราคา</span>
+            </ng-template>
+=======
           <!-- ราคา -->
           <!--<td class="text-blue-500 font-medium whitespace-pre-line">-->
           <td style="white-space: pre-line;">
@@ -227,14 +231,13 @@
               ฿{{ building.price | number }} {{ building.priceInfo }}
             </ng-container>-->
             {{ building.priceText }}
+>>>>>>> dbd0f50087c78e0b5a10772cf76295b3d8884fea
           </td>
 
-          <!-- อัตรา -->
           <td class="text-500">
             {{ building.rate }}
           </td>
 
-          <!-- ✅ จัดการ (เหลือแค่นี้พอ) -->
           <td>
             <div class="flex gap-2">
               <p-button 
@@ -242,13 +245,12 @@
                 [link]="true" 
                 size="small"
                 styleClass="p-0 text-blue-500 text-xs"
-                (click)="openEdit(building)">  <!-- ✅ ADD THIS -->
+                (click)="openEdit(building)"> 
               </p-button>
               <p-button label="ปิด" 
                 [link]="true" 
                 size="small" 
-                styleClass="p-0 text-blue-400 text-xs"
-                >
+                styleClass="p-0 text-blue-400 text-xs">
               </p-button>
               <p-button label="ลบ" 
                 [link]="true" 
@@ -267,6 +269,7 @@
         </tr>
       </ng-template>
     </p-table>
+
     <app-parking-edit-sidebar
       [(visible)]="sidebarEditVisible"
       [data]="selectedBuilding"
@@ -275,6 +278,7 @@
       [token]="sessionToken"
       (save)="handleSave($event)">
     </app-parking-edit-sidebar>
+
     <app-parking-history-sidebar
       [(visible)]="sidebarHistoryVisible"
       [history]="historyList"
